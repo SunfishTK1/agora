@@ -19,7 +19,10 @@ def test_is_sub_path():
     # Edge case: subpath without trailing slash
     assert crawler.is_sub_path("https://example.com/pathsub", parent) is False
     # Trailing slash on parent and link
-    assert crawler.is_sub_path("https://example.com/path/", "https://example.com/path/") is True
+    assert (
+        crawler.is_sub_path("https://example.com/path/", "https://example.com/path/")
+        is True
+    )
 
 
 def test_get_children():
@@ -56,13 +59,16 @@ def test_parse_result():
     assert "Hello World" in content
 
 
-@pytest.mark.parametrize("url,expected", [
-    ("https://valid.url", True),
-    ("invalid-url", False),
-    ("ftp://example.com", True),  # validators.url accepts ftp
-    ("http://", False),
-    ("", False),
-])
+@pytest.mark.parametrize(
+    "url,expected",
+    [
+        ("https://valid.url", True),
+        ("invalid-url", False),
+        ("ftp://example.com", True),  # validators.url accepts ftp
+        ("http://", False),
+        ("", False),
+    ],
+)
 def test_validate_url(url, expected):
     assert crawler.validate_url(url) == expected
 
@@ -128,8 +134,19 @@ def test_crawl_target(mock_validate_url, mock_crawl_jobs):
 
     # Simulate two rounds of crawling
     mock_crawl_jobs.side_effect = [
-        (["https://example.com/child1"], [{"url": parent_url, "title": "Title", "status": crawler.GOOD_STATUS, "content": "text", "children": ["https://example.com/child1"]}]),
-        ([], [])
+        (
+            ["https://example.com/child1"],
+            [
+                {
+                    "url": parent_url,
+                    "title": "Title",
+                    "status": crawler.GOOD_STATUS,
+                    "content": "text",
+                    "children": ["https://example.com/child1"],
+                }
+            ],
+        ),
+        ([], []),
     ]
 
     result = crawler.crawl_target(parent_url, recursive_depth=2)
