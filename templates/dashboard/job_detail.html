@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+
+{% block title %}Job {{ job.id|truncatechars:8 }} - Scraping Platform{% endblock %}
+{% block page_title %}Job Details{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2>Job {{ job.id|truncatechars:8 }}</h2>
+        <p class="text-muted">{{ job.domain.name }} - {{ job.get_job_type_display }}</p>
+    </div>
+    <div class="btn-group">
+        <a href="{% url 'dashboard:job_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Jobs
+        </a>
+        <a href="{% url 'dashboard:domain_detail' job.domain.id %}" class="btn btn-outline-primary">
+            <i class="bi bi-globe"></i> View Domain
+        </a>
+    </div>
+</div>
+
+<!-- Job Overview -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number">
+                <span class="status-badge status-{{ job.status }}">
+                    {{ job.get_status_display }}
+                </span>
+            </div>
+            <div class="stat-label">Status</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number text-success">{{ job.pages_scraped }}</div>
+            <div class="stat-label">Pages Scraped</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number text-danger">{{ job.pages_failed }}</div>
+            <div class="stat-label">Pages Failed</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number text-info">{{ job.success_rate }}%</div>
+            <div class="stat-label">Success Rate</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Job Details -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Job Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <small class="text-muted">Job ID:</small>
+                        <div class="fw-semibold small">{{ job.id }}</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Priority:</small>
+                        <div class="fw-semibold">{{ job.get_priority_display }}</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Created:</small>
+                        <div class="fw-semibold">{{ job.created_at|date:"M d, H:i" }}</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Started:</small>
+                        <div class="fw-semibold">
+                            {% if job.started_at %}
+                                {{ job.started_at|date:"M d, H:i" }}
+                            {% else %}
+                                Not started
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Completed:</small>
+                        <div class="fw-semibold">
+                            {% if job.completed_at %}
+                                {{ job.completed_at|date:"M d, H:i" }}
+                            {% else %}
+                                Not completed
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Duration:</small>
+                        <div class="fw-semibold">
+                            {% if job.duration %}
+                                {{ job.duration.total_seconds|floatformat:0 }}s
+                            {% else %}
+                                -
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                {% if job.error_message %}
+                <hr>
+                <div class="alert alert-danger">
+                    <h6>Error Message:</h6>
+                    <small>{{ job.error_message }}</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scraped Pages -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Scraped Pages ({{ stats.total_pages }})</h5>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="filterPages('all')">All</button>
+                    <button class="btn btn-outline-success" onclick="filterPages('success')">Success</button>
+                    <button class="btn btn-outline-danger" onclick="filterPages('failed')">Failed</button>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if page_obj %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>URL</th>
+                                    <th>Status</th>
+                                    <th>Size</th>
+                                    <th>Time</th>
+                                    <th>Depth</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for page in page_obj %}
+                                <tr class="page-row" data-status="{{ page.status }}">
+                                    <td>
+                                        <a href="{{ page.url }}" target="_blank" class="text-decoration-none small">
+                                            {% if page.title %}
+                                                {{ page.title|truncatechars:40 }}
+                                            {% else %}
+                                                {{ page.url|truncatechars:40 }}
+                                            {% endif %}
+                                        </a>
+                                        <div class="small text-muted">{{ page.url|truncatechars:60 }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-{{ page.status }}">
+                                            {{ page.get_status_display }}
+                                        </span>
+                                        {% if page.status_code %}
+                                            <small class="text-muted d-block">{{ page.status_code }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if page.content_length %}
+                                            {{ page.content_length|filesizeformat }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if page.processing_time_ms %}
+                                            {{ page.processing_time_ms }}ms
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ page.depth_level }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if page_obj.has_other_pages %}
+                        <nav class="mt-3">
+                            <ul class="pagination pagination-sm justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                                </li>
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-file-earmark-text text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">No pages scraped yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterPages(status) {
+    const rows = document.querySelectorAll('.page-row');
+    
+    rows.forEach(row => {
+        if (status === 'all' || row.dataset.status === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Update button states
+    document.querySelectorAll('.btn-group button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+}
+
+// Auto-refresh if job is running
+{% if job.status == 'running' %}
+setInterval(function() {
+    location.reload();
+}, 10000); // Refresh every 10 seconds
+{% endif %}
+</script>
+{% endblock %}

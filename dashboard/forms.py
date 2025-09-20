@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from urllib.parse import urlparse
 import json
 
-from scraper.models import Domain, ScrapingTemplate
+from scraper.models import Domain, ScrapingTemplate, ScrapingJob
 
 
 class DomainForm(forms.ModelForm):

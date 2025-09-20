@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block title %}Scheduler Status - Scraping Platform{% endblock %}
+{% block page_title %}Scheduler Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>Scheduler Status</h2>
+        <p class="text-muted">Monitor and manage the job scheduler</p>
+    </div>
+    <div class="btn-group">
+        <a href="{% url 'dashboard:home' %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Scheduler Status Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number">
+                {% if status.running %}
+                    <span class="text-success"><i class="bi bi-play-circle"></i> Running</span>
+                {% else %}
+                    <span class="text-danger"><i class="bi bi-stop-circle"></i> Stopped</span>
+                {% endif %}
+            </div>
+            <div class="stat-label">Scheduler Status</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number text-primary">{{ status.total_jobs|default:0 }}</div>
+            <div class="stat-label">Active Jobs</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number text-info">{{ recent_jobs|length }}</div>
+            <div class="stat-label">Recent Executions</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number text-secondary">{{ status.timezone|default:"UTC" }}</div>
+            <div class="stat-label">Timezone</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Scheduler Configuration -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Configuration</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <small class="text-muted">Status:</small>
+                        <div class="fw-semibold">
+                            {% if status.running %}
+                                <span class="text-success">Running</span>
+                            {% else %}
+                                <span class="text-danger">Stopped</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Total Jobs:</small>
+                        <div class="fw-semibold">{{ status.total_jobs|default:0 }}</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Job Stores:</small>
+                        <div class="fw-semibold">
+                            {% for store in status.job_stores %}
+                                <span class="badge bg-light text-dark">{{ store }}</span>
+                            {% empty %}
+                                <span class="text-muted">None</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Executors:</small>
+                        <div class="fw-semibold">
+                            {% for executor in status.executors %}
+                                <span class="badge bg-light text-dark">{{ executor }}</span>
+                            {% empty %}
+                                <span class="text-muted">None</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scheduled Jobs -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Scheduled Jobs</h5>
+            </div>
+            <div class="card-body">
+                {% if scheduled_jobs %}
+                    <div class="list-group list-group-flush">
+                        {% for job in scheduled_jobs %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ job.name|default:job.id }}</strong>
+                                <small class="text-muted d-block">{{ job.trigger|default:"Unknown trigger" }}</small>
+                            </div>
+                            <div class="text-end">
+                                {% if job.next_run_time %}
+                                    <small class="text-success">{{ job.next_run_time }}</small>
+                                {% else %}
+                                    <small class="text-muted">No next run</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-clock text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2">No scheduled jobs</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Job Executions -->
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Job Executions</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_jobs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Job ID</th>
+                                    <th>Domain</th>
+                                    <th>Status</th>
+                                    <th>Pages</th>
+                                    <th>Duration</th>
+                                    <th>Started</th>
+                                    <th>Completed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in recent_jobs %}
+                                <tr>
+                                    <td>
+                                        <code class="small">{{ job.id|truncatechars:8 }}</code>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'dashboard:domain_detail' job.domain.id %}" 
+                                           class="text-decoration-none">
+                                            {{ job.domain.name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-{{ job.status }}">
+                                            {{ job.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if job.pages_scraped > 0 %}
+                                            <span class="text-success">{{ job.pages_scraped }}</span>
+                                            {% if job.pages_failed > 0 %}
+                                                / <span class="text-danger">{{ job.pages_failed }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if job.duration %}
+                                            {{ job.duration.total_seconds|floatformat:0 }}s
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if job.started_at %}
+                                            {{ job.started_at|date:"M d, H:i" }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if job.completed_at %}
+                                            {{ job.completed_at|date:"M d, H:i" }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-clock-history text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">No recent job executions</p>
+                        <a href="{% url 'dashboard:domain_create' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Add Domain to Start Scraping
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh every 30 seconds
+setInterval(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

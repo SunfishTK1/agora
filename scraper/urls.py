@@ -28,8 +28,8 @@ urlpatterns = [
     path('stats/', SystemStatsAPIView.as_view(), name='system_stats'),
     path('bulk-scrape/', BulkScrapingAPIView.as_view(), name='bulk_scrape'),
     
-    # API documentation
-    path('docs/', include_docs_urls(title='Scraping Platform API')),
+    # API documentation (temporarily disabled)
+    # path('docs/', include_docs_urls(title='Scraping Platform API')),
 ]
 
 # Add schema and browsable API patterns

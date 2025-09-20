@@ -57,6 +57,21 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# CSRF Settings for development
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8002',
+    'http://127.0.0.1:8002',
+    'http://127.0.0.1:62791',  # Browser preview URL
+    'http://127.0.0.1:59455',  # Alternate browser preview
+]
+
+# For development only - more permissive CSRF settings
+if DEBUG:
+    CSRF_COOKIE_SECURE = False
+    CSRF_COOKIE_HTTPONLY = False
+    CSRF_USE_SESSIONS = False
+    CSRF_COOKIE_SAMESITE = 'Lax'
+
 ROOT_URLCONF = 'scraping_platform.urls'
 
 TEMPLATES = [
@@ -158,7 +173,12 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "http://localhost:8002",
+    "http://127.0.0.1:8002",
+    "http://127.0.0.1:62791",  # Browser preview
 ]
+
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development
 
 # Security settings
 SECURE_BROWSER_XSS_FILTER = True

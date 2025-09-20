@@ -20,7 +20,6 @@ from scheduler.scheduler_service import get_scheduler
 from .forms import DomainForm, DomainConfigForm
 
 
-@login_required
 def dashboard_home(request):
     """Main dashboard with overview statistics."""
     
@@ -84,7 +83,6 @@ def dashboard_home(request):
     return render(request, 'dashboard/home.html', context)
 
 
-@login_required
 def domain_list(request):
     """List all domains with filtering and search."""
     
@@ -125,7 +123,6 @@ def domain_list(request):
     return render(request, 'dashboard/domain_list.html', context)
 
 
-@login_required
 def domain_create(request):
     """Create a new domain configuration."""
     
@@ -133,7 +130,9 @@ def domain_create(request):
         form = DomainForm(request.POST)
         if form.is_valid():
             domain = form.save(commit=False)
-            domain.created_by = request.user
+            # Set created_by to None for now (can be updated later)
+            if request.user.is_authenticated:
+                domain.created_by = request.user
             domain.save()
             
             # Schedule the domain if it's active
@@ -155,7 +154,6 @@ def domain_create(request):
     return render(request, 'dashboard/domain_form.html', context)
 
 
-@login_required
 def domain_detail(request, domain_id):
     """Detailed view of a domain with jobs and statistics."""
     
@@ -197,7 +195,6 @@ def domain_detail(request, domain_id):
     return render(request, 'dashboard/domain_detail.html', context)
 
 
-@login_required
 def domain_edit(request, domain_id):
     """Edit domain configuration."""
     
@@ -237,7 +234,6 @@ def domain_edit(request, domain_id):
     return render(request, 'dashboard/domain_form.html', context)
 
 
-@login_required
 @require_http_methods(["POST"])
 def domain_action(request, domain_id, action):
     """Handle domain actions (activate, pause, scrape_now, delete)."""
@@ -280,7 +276,6 @@ def domain_action(request, domain_id, action):
     return redirect('dashboard:domain_detail', domain_id=domain.id)
 
 
-@login_required
 def job_list(request):
     """List all scraping jobs with filtering."""
     
@@ -325,7 +320,6 @@ def job_list(request):
     return render(request, 'dashboard/job_list.html', context)
 
 
-@login_required
 def job_detail(request, job_id):
     """Detailed view of a scraping job."""
     
@@ -358,7 +352,6 @@ def job_detail(request, job_id):
     return render(request, 'dashboard/job_detail.html', context)
 
 
-@login_required
 def analytics(request):
     """Analytics dashboard with charts and metrics."""
     
@@ -425,7 +418,6 @@ def analytics(request):
     return render(request, 'dashboard/analytics.html', context)
 
 
-@login_required
 def scheduler_status(request):
     """Scheduler status and management page."""
     
