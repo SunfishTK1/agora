@@ -1,4 +1,5 @@
 import httpx
+import time
 import validators
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urlunparse
@@ -22,15 +23,19 @@ def read_robots_txt(url: str, user_agent: str = "*"):
             response.raise_for_status()
             robotstxt = response.text
     except (httpx.RequestError, httpx.HTTPStatusError):
-        return None
+        return (None, None, None, None)
 
     rp = Protego.parse(robotstxt)
 
-    return (
-        rp.crawl_delay(user_agent),
-        rp.request_rate(user_agent),
-        rp.preferred_host,
-    )
+    crawl_delay = rp.crawl_delay(user_agent)
+    request_rate = rp.request_rate(user_agent)
+    preferred_host = rp.preferred_host
+    is_allowed = rp.can_fetch(url, user_agent)
+
+    if request_rate:
+        request_rate = (request_rate.requests, request_rate.seconds)
+
+    return (crawl_delay, request_rate, preferred_host, is_allowed)
 
 
 def is_sub_path(link, parent_url):
@@ -93,6 +98,14 @@ def fetch(url: str):
     content = ""
 
     try:
+
+        crawl_delay, request_rate, preferred_host, is_allowed = read_robots_txt(url)
+
+        if crawl_delay:
+            time.sleep(crawl_delay)
+            
+        if is_allowed is False:
+            return status, content
 
         r = httpx.get(url, follow_redirects=True)
 
@@ -160,8 +173,8 @@ def crawl_target(parent_url: str, recursive_depth: int = 2):
 
 
 if __name__ == "__main__":
-    target = "https://www.iana.org/domains/example"
+    target = "https://www.cmu.edu/cmufront/"
 
     result = crawl_target(target)
     print(result)
-    print(len(result["crawl_result"]))
+    # print(len(result["crawl_result"]))
