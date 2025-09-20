@@ -9,8 +9,8 @@ from django.urls import reverse
 from django.db.models import Count, Avg
 from django.utils import timezone
 from .models import (
-    Domain, ScrapingJob, ScrapedPage, ScrapingTemplate, 
-    ApiEndpoint, SystemMetrics, PageSummary, DocumentEmbedding
+    Domain, ScrapingJob, ScrapedPage, ApiEndpoint, SystemMetrics,
+    PageSummary, DocumentEmbedding, RobotsInfo
 )
 
 
@@ -159,39 +159,34 @@ class ScrapingJobAdmin(admin.ModelAdmin):
 @admin.register(ScrapedPage)
 class ScrapedPageAdmin(admin.ModelAdmin):
     list_display = [
-        'url_short', 'job_link', 'status', 'status_code',
-        'depth_level', 'content_length', 'processing_time_ms', 'created_at'
+        'url_short', 'job_link', 'crawl_status', 'status_code',
+        'crawl_depth', 'file_size', 'processing_time', 'scraped_at'
     ]
-    list_filter = [
-        'status', 'status_code', 'depth_level', 'content_type', 'created_at',
-        ('job', admin.RelatedOnlyFieldListFilter)
-    ]
-    search_fields = ['url', 'title', 'job__id']
-    readonly_fields = [
-        'id', 'url_hash', 'created_at', 'updated_at'
-    ]
+    list_filter = ['crawl_status', 'status_code', 'crawl_depth', 'robots_allowed', 'scraped_at']
+    search_fields = ['url', 'title', 'content']
+    readonly_fields = ['scraped_at', 'file_size', 'processing_time']
     raw_id_fields = ['job']
     
     fieldsets = (
         ('Page Information', {
-            'fields': ('id', 'job', 'url', 'url_hash', 'title', 'depth_level')
+            'fields': ('job', 'url', 'title', 'crawl_depth', 'parent_url')
         }),
         ('HTTP Details', {
-            'fields': ('status_code', 'content_type', 'content_length', 'last_modified'),
+            'fields': ('status_code', 'file_size'),
         }),
         ('Content', {
-            'fields': ('content', 'raw_html'),
+            'fields': ('content', 'html_content'),
             'classes': ('collapse',)
         }),
-        ('Processing', {
-            'fields': ('status', 'processing_time_ms', 'error_message'),
+        ('Agora Crawler Data', {
+            'fields': ('crawl_status', 'robots_allowed', 'crawl_delay_used', 'processing_time', 'error_message'),
         }),
-        ('Links & Data', {
-            'fields': ('links_found', 'internal_links', 'external_links', 'extracted_data'),
+        ('SEO Data', {
+            'fields': ('meta_description', 'meta_keywords'),
             'classes': ('collapse',)
         }),
         ('Timestamps', {
-            'fields': ('created_at', 'updated_at'),
+            'fields': ('scraped_at',),
             'classes': ('collapse',)
         })
     )
@@ -208,25 +203,7 @@ class ScrapedPageAdmin(admin.ModelAdmin):
     job_link.short_description = 'Job'
 
 
-@admin.register(ScrapingTemplate)
-class ScrapingTemplateAdmin(admin.ModelAdmin):
-    list_display = ['name', 'is_public', 'usage_count', 'created_by', 'created_at']
-    list_filter = ['is_public', 'created_at', ('created_by', admin.RelatedOnlyFieldListFilter)]
-    search_fields = ['name', 'description']
-    readonly_fields = ['id', 'usage_count', 'created_at', 'updated_at']
-    
-    fieldsets = (
-        ('Template Information', {
-            'fields': ('id', 'name', 'description', 'is_public', 'usage_count')
-        }),
-        ('Configuration', {
-            'fields': ('selectors', 'rules'),
-        }),
-        ('Metadata', {
-            'fields': ('created_by', 'created_at', 'updated_at'),
-            'classes': ('collapse',)
-        })
-    )
+# ScrapingTemplate admin removed - model not currently implemented
 
 
 @admin.register(ApiEndpoint)
@@ -324,31 +301,28 @@ class PageSummaryAdmin(admin.ModelAdmin):
 @admin.register(DocumentEmbedding)
 class DocumentEmbeddingAdmin(admin.ModelAdmin):
     list_display = [
-        'embedding_id', 'summary_url', 'model_used',
-        'vector_dimensions', 'processing_time_ms', 'created_at'
+        'milvus_id', 'summary_url', 'embedding_model',
+        'embedding_dimensions', 'processing_time_ms', 'created_at'
     ]
     list_filter = [
-        'model_used', 'vector_dimensions', 'created_at',
+        'embedding_model', 'embedding_dimensions', 'created_at',
         ('summary__scraped_page__job__domain', admin.RelatedOnlyFieldListFilter)
     ]
-    search_fields = ['embedding_id', 'summary__scraped_page__url']
+    search_fields = ['milvus_id', 'summary__scraped_page__url']
     readonly_fields = [
-        'id', 'embedding_id', 'vector_dimensions', 'processing_time_ms', 
+        'id', 'milvus_id', 'embedding_dimensions', 'processing_time_ms', 
         'created_at', 'updated_at'
     ]
     raw_id_fields = ['summary']
     
     fieldsets = (
         ('Embedding Information', {
-            'fields': ('id', 'embedding_id', 'summary', 'model_used', 'vector_dimensions')
+            'fields': ('id', 'milvus_id', 'summary', 'embedding_model', 'embedding_dimensions')
         }),
         ('Processing Details', {
             'fields': ('processing_time_ms',),
         }),
-        ('Vector Data', {
-            'fields': ('embedding_vector',),
-            'classes': ('collapse',)
-        }),
+        # Vector data stored in Milvus, not Django
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
@@ -365,3 +339,28 @@ class DocumentEmbeddingAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         # Embeddings are typically created programmatically
         return request.user.is_superuser
+
+
+@admin.register(RobotsInfo)
+class RobotsInfoAdmin(admin.ModelAdmin):
+    list_display = ['domain', 'crawl_delay', 'is_accessible', 'last_checked']
+    list_filter = ['is_accessible', 'last_checked']
+    search_fields = ['domain']
+    readonly_fields = ['last_checked', 'created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Domain Information', {
+            'fields': ('domain', 'is_accessible', 'last_checked')
+        }),
+        ('Robots.txt Data', {
+            'fields': ('crawl_delay', 'request_rate_requests', 'request_rate_seconds', 'preferred_host')
+        }),
+        ('Content', {
+            'fields': ('robots_txt_content', 'error_message'),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )

@@ -301,14 +301,14 @@ class ScrapedPageViewSet(viewsets.ReadOnlyModelViewSet):
     Provides access to individual page content and metadata.
     """
     
-    queryset = ScrapedPage.objects.select_related('job', 'job__domain').order_by('-created_at')
+    queryset = ScrapedPage.objects.select_related('job', 'job__domain').order_by('-scraped_at')
     serializer_class = ScrapedPageSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['status', 'status_code', 'depth_level']
+    filterset_fields = ['crawl_status', 'status_code', 'crawl_depth']
     search_fields = ['url', 'title', 'content']
-    ordering_fields = ['created_at', 'processing_time_ms', 'content_length']
-    ordering = ['-created_at']
+    ordering_fields = ['scraped_at', 'processing_time', 'file_size']
+    ordering = ['-scraped_at']
     
     def get_queryset(self):
         """Filter pages by user permissions."""

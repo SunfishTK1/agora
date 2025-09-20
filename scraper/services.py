@@ -20,7 +20,8 @@ from django.conf import settings
 from django.utils import timezone
 from django.core.cache import cache
 
-from .models import Domain, ScrapingJob, ScrapedPage, ApiEndpoint, SystemMetrics
+from .models import Domain, ScrapingJob, ScrapedPage, ApiEndpoint, SystemMetrics, RobotsInfo
+from .agora_crawler import get_agora_crawler_service, CRAWL_SUCCESS
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,7 @@ class ScrapingService:
         self.retry_delay = settings.SCRAPING_CONFIG.get('RETRY_DELAY', 5)
         
         # Initialize summarization pipeline if enabled in settings
-        self.enable_auto_summarization = getattr(settings, 'ENABLE_AUTO_SUMMARIZATION', True)
+        self.enable_auto_summarization = getattr(settings, 'ENABLE_AUTO_SUMMARIZATION', False)  # Temporarily disabled
         if self.enable_auto_summarization:
             try:
                 from .summarization_pipeline import SummarizationPipeline
@@ -73,90 +74,83 @@ class ScrapingService:
         
     def scrape_domain(self, domain: Domain, job: ScrapingJob) -> Dict[str, Any]:
         """
-        Main entry point for domain scraping.
+        Main entry point for domain scraping using enhanced Agora crawler.
         Returns a dictionary with scraping results.
         """
-        logger.info(f"Starting scrape for domain: {domain.name} (Job: {job.id})")
+        logger.info(f"Starting enhanced scrape for domain: {domain.name} (Job: {job.id})")
         
         start_time = timezone.now()
         results = {
             'domain': domain.domain,
-            'base_url': domain.base_url,
             'job_id': str(job.id),
-            'started_at': start_time.isoformat(),
             'pages': [],
-            'summary': {
-                'total_pages': 0,
-                'successful_pages': 0,
-                'failed_pages': 0,
-                'total_size_bytes': 0,
-                'processing_time_seconds': 0
-            }
+            'total_pages': 0,
+            'successful_pages': 0,
+            'failed_pages': 0,
+            'robots_blocked_pages': 0,
+            'total_size_bytes': 0,
+            'processing_time_seconds': 0,
+            'status': 'in_progress',
+            'crawler_type': 'agora_enhanced'
         }
-        
+
         try:
-            # Update job status
-            job.status = 'running'
-            job.started_at = start_time
-            job.save()
-            
             if self.use_dummy_api:
-                pages_data = self._dummy_scrape_pages(domain, job)
+                # Use dummy API for testing (fallback)
+                scraped_results = self._scrape_with_dummy_api(domain, job)
+                # Convert to agora format
+                agora_results = []
+                for result in scraped_results:
+                    from .agora_crawler import CrawlResult
+                    agora_results.append(CrawlResult(
+                        url=result.url,
+                        title=result.title,
+                        content=result.content,
+                        status=CRAWL_SUCCESS,
+                        children=[],
+                        robots_allowed=True,
+                        crawl_delay=None,
+                        processing_time=0.1,
+                        status_code=200
+                    ))
+                crawl_data = {'crawl_results': agora_results}
             else:
-                pages_data = self._real_scrape_pages(domain, job)
+                # Use enhanced Agora crawler
+                crawl_data = self._scrape_with_agora_crawler(domain, job)
             
-            # Process each page result
-            for page_data in pages_data:
-                try:
-                    scraped_page = self._save_scraped_page(job, page_data)
+            # Process agora crawler results
+            for crawl_result in crawl_data['crawl_results']:
+                scraped_page = self._save_agora_scraped_page(job, crawl_result)
+                if scraped_page:
+                    results['pages'].append({
+                        'url': scraped_page.url,
+                        'title': scraped_page.title,
+                        'content': scraped_page.content[:200] + '...' if len(scraped_page.content) > 200 else scraped_page.content,
+                        'status_code': scraped_page.status_code,
+                        'file_size': scraped_page.file_size,
+                        'crawl_status': scraped_page.crawl_status,
+                        'robots_allowed': scraped_page.robots_allowed,
+                        'crawl_depth': scraped_page.crawl_depth,
+                        'processing_time': scraped_page.processing_time
+                    })
                     
-                    # Add to results
-                    page_result = {
-                        'url': page_data.url,
-                        'title': page_data.title,
-                        'content': page_data.content[:1000] + "..." if len(page_data.content) > 1000 else page_data.content,
-                        'status_code': page_data.status_code,
-                        'content_length': page_data.content_length,
-                        'extracted_data': page_data.extracted_data
-                    }
-                    results['pages'].append(page_result)
-                    
-                    # Update summary
-                    results['summary']['total_pages'] += 1
-                    if page_data.status_code == 200:
-                        results['summary']['successful_pages'] += 1
+                    if crawl_result.status == CRAWL_SUCCESS:
+                        results['successful_pages'] += 1
+                        results['total_size_bytes'] += scraped_page.file_size
+                    elif crawl_result.status == 'robots_blocked':
+                        results['robots_blocked_pages'] += 1
                     else:
-                        results['summary']['failed_pages'] += 1
-                    results['summary']['total_size_bytes'] += page_data.content_length
+                        results['failed_pages'] += 1
                     
-                except Exception as e:
-                    logger.error(f"Error saving page {page_data.url}: {str(e)}")
-                    results['summary']['failed_pages'] += 1
+                    results['total_pages'] += 1
             
-            # Complete the job
-            end_time = timezone.now()
-            duration = (end_time - start_time).total_seconds()
-            
+            # Update job status with enhanced metrics
             job.status = 'completed'
-            job.completed_at = end_time
-            job.pages_scraped = results['summary']['successful_pages']
-            job.pages_failed = results['summary']['failed_pages']
-            job.total_size_bytes = results['summary']['total_size_bytes']
+            job.completed_at = timezone.now()
+            job.pages_scraped = results['total_pages']
             job.save()
             
-            # Update domain statistics
-            domain.total_scrapes += 1
-            domain.successful_scrapes += 1
-            domain.last_scraped = end_time
-            domain.next_scrape = domain.get_next_scrape_time()
-            domain.save()
-            
-            results['summary']['processing_time_seconds'] = duration
-            results['completed_at'] = end_time.isoformat()
-            results['status'] = 'success'
-            
-            logger.info(f"Scraping completed for {domain.name}: {results['summary']}")
-            
+            results['status'] = 'completed'
             # Auto-trigger summarization pipeline if enabled
             if self.enable_auto_summarization and results['summary']['successful_pages'] > 0:
                 try:
@@ -170,20 +164,78 @@ class ScrapingService:
                     logger.error(f"Auto-summarization failed for job {job.id}: {str(e)}")
                     results['summarization_error'] = str(e)
             
-            return results
             
         except Exception as e:
-            logger.error(f"Scraping failed for {domain.name}: {str(e)}")
-            
-            # Update job with error
+            logger.error(f"Error in enhanced scraping for {domain.name}: {str(e)}")
             job.status = 'failed'
             job.error_message = str(e)
             job.completed_at = timezone.now()
             job.save()
             
-            # Update domain statistics
-            domain.failed_scrapes += 1
-            domain.save()
+            results['status'] = 'failed'
+            results['error'] = str(e)
+        
+        # Calculate processing time
+        end_time = timezone.now()
+        processing_time = (end_time - start_time).total_seconds()
+        results['processing_time_seconds'] = processing_time
+        
+        logger.info(f"Enhanced scraping completed for {domain.name}: {results}")
+        return results
+
+    def _scrape_with_agora_crawler(self, domain: Domain, job: ScrapingJob) -> Dict[str, Any]:
+        """
+        Scrape domain using the enhanced Agora crawler.
+        """
+        crawler = get_agora_crawler_service(
+            user_agent=settings.SCRAPING_CONFIG.get('USER_AGENT', 'AgoraScrapingPlatform/1.0'),
+            respect_robots=settings.SCRAPING_CONFIG.get('RESPECT_ROBOTS_TXT', True)
+        )
+        
+        logger.info(f"Using Agora crawler for {domain.base_url} with max_depth={domain.max_depth}")
+        
+        # Use enhanced recursive crawling
+        crawl_results = crawler.crawl_recursive(
+            start_url=domain.base_url,
+            max_depth=domain.max_depth or 2,
+            max_pages_per_level=domain.max_pages or 50
+        )
+        
+        return crawl_results
+
+    def _save_agora_scraped_page(self, job: ScrapingJob, crawl_result) -> Optional[ScrapedPage]:
+        """
+        Save Agora crawler result to database with enhanced metadata.
+        """
+        try:
+            # Calculate depth from parent relationship
+            depth = getattr(crawl_result, 'crawl_depth', 0)
+            
+            scraped_page = ScrapedPage.objects.create(
+                job=job,
+                url=crawl_result.url,
+                title=crawl_result.title or '',
+                content=crawl_result.content,
+                html_content=getattr(crawl_result, 'html_content', ''),
+                status_code=crawl_result.status_code,
+                file_size=len(crawl_result.content.encode('utf-8')),
+                
+                # Agora crawler specific fields
+                robots_allowed=crawl_result.robots_allowed,
+                crawl_delay_used=crawl_result.crawl_delay,
+                processing_time=crawl_result.processing_time,
+                crawl_depth=depth,
+                parent_url=getattr(crawl_result, 'parent_url', ''),
+                crawl_status=crawl_result.status,
+                error_message=crawl_result.error_message or ''
+            )
+            
+            logger.debug(f"Saved page: {scraped_page.url} (status: {scraped_page.crawl_status})")
+            return scraped_page
+            
+        except Exception as e:
+            logger.error(f"Error saving scraped page {crawl_result.url}: {str(e)}")
+            return None
             
             results['status'] = 'error'
             results['error'] = str(e)
