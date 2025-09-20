@@ -61,6 +61,16 @@ class ScrapingService:
         self.max_retries = settings.SCRAPING_CONFIG.get('MAX_RETRIES', 3)
         self.retry_delay = settings.SCRAPING_CONFIG.get('RETRY_DELAY', 5)
         
+        # Initialize summarization pipeline if enabled in settings
+        self.enable_auto_summarization = getattr(settings, 'ENABLE_AUTO_SUMMARIZATION', True)
+        if self.enable_auto_summarization:
+            try:
+                from .summarization_pipeline import SummarizationPipeline
+                self.summarization_pipeline = SummarizationPipeline()
+            except ImportError:
+                logger.warning("Summarization pipeline not available, disabling auto-summarization")
+                self.enable_auto_summarization = False
+        
     def scrape_domain(self, domain: Domain, job: ScrapingJob) -> Dict[str, Any]:
         """
         Main entry point for domain scraping.
@@ -146,6 +156,19 @@ class ScrapingService:
             results['status'] = 'success'
             
             logger.info(f"Scraping completed for {domain.name}: {results['summary']}")
+            
+            # Auto-trigger summarization pipeline if enabled
+            if self.enable_auto_summarization and results['summary']['successful_pages'] > 0:
+                try:
+                    logger.info(f"Starting auto-summarization for job {job.id}")
+                    summarization_stats = self.summarization_pipeline.process_scraped_pages(
+                        job_id=str(job.id)
+                    )
+                    results['summarization_stats'] = summarization_stats
+                    logger.info(f"Auto-summarization completed: {summarization_stats}")
+                except Exception as e:
+                    logger.error(f"Auto-summarization failed for job {job.id}: {str(e)}")
+                    results['summarization_error'] = str(e)
             
             return results
             

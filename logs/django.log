@@ -4898,3 +4898,102 @@ INFO 2025-09-20 06:23:44,921 basehttp 44025 6201061376 "GET /dashboard/api/stats
 WARNING 2025-09-20 06:23:44,923 log 44025 6201061376 Not Found: /accounts/login/
 WARNING 2025-09-20 06:23:44,923 basehttp 44025 6201061376 "GET /accounts/login/?next=/dashboard/api/stats/ HTTP/1.1" 404 179
 INFO 2025-09-20 06:23:44,926 basehttp 44025 6217887744 "GET /dashboard/domains/ HTTP/1.1" 200 43712
+INFO 2025-09-20 06:24:15,907 basehttp 44025 6201061376 "GET /dashboard/api/stats/ HTTP/1.1" 302 0
+WARNING 2025-09-20 06:24:15,911 log 44025 6201061376 Not Found: /accounts/login/
+INFO 2025-09-20 06:24:15,916 basehttp 44025 6217887744 "GET /dashboard/domains/ HTTP/1.1" 200 43712
+WARNING 2025-09-20 06:24:15,917 basehttp 44025 6201061376 "GET /accounts/login/?next=/dashboard/api/stats/ HTTP/1.1" 404 179
+INFO 2025-09-20 06:24:46,911 basehttp 44025 6201061376 "GET /dashboard/api/stats/ HTTP/1.1" 302 0
+WARNING 2025-09-20 06:24:46,921 log 44025 6217887744 Not Found: /accounts/login/
+WARNING 2025-09-20 06:24:46,922 basehttp 44025 6217887744 "GET /accounts/login/?next=/dashboard/api/stats/ HTTP/1.1" 404 179
+INFO 2025-09-20 06:24:46,927 basehttp 44025 6201061376 "GET /dashboard/domains/ HTTP/1.1" 200 43712
+INFO 2025-09-20 06:25:17,915 basehttp 44025 6201061376 "GET /dashboard/api/stats/ HTTP/1.1" 302 0
+WARNING 2025-09-20 06:25:17,923 log 44025 6217887744 Not Found: /accounts/login/
+WARNING 2025-09-20 06:25:17,924 basehttp 44025 6217887744 "GET /accounts/login/?next=/dashboard/api/stats/ HTTP/1.1" 404 179
+INFO 2025-09-20 06:25:17,930 basehttp 44025 6201061376 "GET /dashboard/domains/ HTTP/1.1" 200 43712
+INFO 2025-09-20 06:25:22,025 autoreload 44025 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/models.py changed, reloading.
+INFO 2025-09-20 06:25:22,023 autoreload 44027 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/models.py changed, reloading.
+INFO 2025-09-20 06:25:22,026 autoreload 44026 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/models.py changed, reloading.
+INFO 2025-09-20 06:25:22,916 scheduler_service 49413 8800755904 Scheduler configured successfully
+INFO 2025-09-20 06:25:22,916 scheduler_service 49414 8800755904 Scheduler configured successfully
+INFO 2025-09-20 06:25:22,916 scheduler_service 49412 8800755904 Scheduler configured successfully
+INFO 2025-09-20 06:25:22,929 autoreload 49412 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:25:22,929 autoreload 49414 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:25:22,929 autoreload 49413 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:25:26,460 scheduler_service 49542 8800755904 Scheduler configured successfully
+INFO 2025-09-20 06:25:31,076 scheduler_service 49733 8800755904 Scheduler configured successfully
+INFO 2025-09-20 06:25:48,932 basehttp 49414 6186856448 "GET /dashboard/api/stats/ HTTP/1.1" 302 0
+WARNING 2025-09-20 06:25:48,937 log 49414 6186856448 Not Found: /accounts/login/
+WARNING 2025-09-20 06:25:48,938 basehttp 49414 6186856448 "GET /accounts/login/?next=/dashboard/api/stats/ HTTP/1.1" 404 179
+INFO 2025-09-20 06:25:48,950 basehttp 49414 6170030080 "GET /dashboard/domains/ HTTP/1.1" 200 43712
+INFO 2025-09-20 06:26:19,916 basehttp 49414 6170030080 "GET /dashboard/api/stats/ HTTP/1.1" 302 0
+WARNING 2025-09-20 06:26:19,921 log 49414 6186856448 Not Found: /accounts/login/
+WARNING 2025-09-20 06:26:19,922 basehttp 49414 6186856448 "GET /accounts/login/?next=/dashboard/api/stats/ HTTP/1.1" 404 179
+INFO 2025-09-20 06:26:19,929 basehttp 49414 6170030080 "GET /dashboard/domains/ HTTP/1.1" 200 43712
+INFO 2025-09-20 06:26:50,913 basehttp 49414 6186856448 "GET /dashboard/api/stats/ HTTP/1.1" 302 0
+WARNING 2025-09-20 06:26:50,917 log 49414 6186856448 Not Found: /accounts/login/
+WARNING 2025-09-20 06:26:50,917 basehttp 49414 6186856448 "GET /accounts/login/?next=/dashboard/api/stats/ HTTP/1.1" 404 179
+INFO 2025-09-20 06:26:50,923 basehttp 49414 6170030080 "GET /dashboard/domains/ HTTP/1.1" 200 43712
+INFO 2025-09-20 06:27:21,906 basehttp 49414 6170030080 "GET /dashboard/api/stats/ HTTP/1.1" 302 0
+WARNING 2025-09-20 06:27:21,908 log 49414 6186856448 Not Found: /accounts/login/
+WARNING 2025-09-20 06:27:21,908 basehttp 49414 6186856448 "GET /accounts/login/?next=/dashboard/api/stats/ HTTP/1.1" 404 179
+INFO 2025-09-20 06:27:21,913 basehttp 49414 6170030080 "GET /dashboard/domains/ HTTP/1.1" 200 43714
+INFO 2025-09-20 06:27:52,907 basehttp 49414 6186856448 "GET /dashboard/api/stats/ HTTP/1.1" 302 0
+WARNING 2025-09-20 06:27:52,909 log 49414 6186856448 Not Found: /accounts/login/
+WARNING 2025-09-20 06:27:52,909 basehttp 49414 6186856448 "GET /accounts/login/?next=/dashboard/api/stats/ HTTP/1.1" 404 179
+INFO 2025-09-20 06:27:52,911 basehttp 49414 6170030080 "GET /dashboard/domains/ HTTP/1.1" 200 43714
+INFO 2025-09-20 06:28:23,903 basehttp 49414 6186856448 "GET /dashboard/api/stats/ HTTP/1.1" 302 0
+WARNING 2025-09-20 06:28:23,908 log 49414 6186856448 Not Found: /accounts/login/
+WARNING 2025-09-20 06:28:23,909 basehttp 49414 6186856448 "GET /accounts/login/?next=/dashboard/api/stats/ HTTP/1.1" 404 179
+INFO 2025-09-20 06:28:23,912 basehttp 49414 6170030080 "GET /dashboard/domains/ HTTP/1.1" 200 43714
+INFO 2025-09-20 06:28:54,902 basehttp 49414 6170030080 "GET /dashboard/api/stats/ HTTP/1.1" 302 0
+WARNING 2025-09-20 06:28:54,904 log 49414 6170030080 Not Found: /accounts/login/
+WARNING 2025-09-20 06:28:54,906 basehttp 49414 6170030080 "GET /accounts/login/?next=/dashboard/api/stats/ HTTP/1.1" 404 179
+INFO 2025-09-20 06:28:54,915 basehttp 49414 6186856448 "GET /dashboard/domains/ HTTP/1.1" 200 43714
+INFO 2025-09-20 06:29:21,737 autoreload 49413 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/services.py changed, reloading.
+INFO 2025-09-20 06:29:21,739 autoreload 49414 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/services.py changed, reloading.
+INFO 2025-09-20 06:29:21,740 autoreload 49412 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/services.py changed, reloading.
+INFO 2025-09-20 06:29:22,578 autoreload 49924 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:29:22,578 autoreload 49923 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:29:23,106 autoreload 49925 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:38:42,720 autoreload 49925 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/admin.py changed, reloading.
+INFO 2025-09-20 06:38:43,061 autoreload 49924 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/admin.py changed, reloading.
+INFO 2025-09-20 06:38:43,064 autoreload 49923 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/admin.py changed, reloading.
+INFO 2025-09-20 06:38:43,487 autoreload 50292 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:38:43,557 autoreload 50293 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:38:43,558 autoreload 50294 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:39:01,196 autoreload 50294 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/admin.py changed, reloading.
+INFO 2025-09-20 06:39:01,197 autoreload 50293 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/admin.py changed, reloading.
+INFO 2025-09-20 06:39:01,198 autoreload 50292 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/admin.py changed, reloading.
+INFO 2025-09-20 06:39:02,124 autoreload 50334 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:39:02,124 autoreload 50333 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:39:02,124 autoreload 50335 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:49:43,365 autoreload 50335 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/summarization_pipeline.py changed, reloading.
+INFO 2025-09-20 06:49:43,368 autoreload 50334 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/summarization_pipeline.py changed, reloading.
+INFO 2025-09-20 06:49:43,374 autoreload 50333 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/summarization_pipeline.py changed, reloading.
+INFO 2025-09-20 06:49:44,179 autoreload 51576 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:49:44,179 autoreload 51578 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:49:44,179 autoreload 51577 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:49:47,759 autoreload 51576 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/summarization_pipeline.py changed, reloading.
+INFO 2025-09-20 06:49:47,763 autoreload 51578 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/summarization_pipeline.py changed, reloading.
+INFO 2025-09-20 06:49:47,767 autoreload 51577 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/summarization_pipeline.py changed, reloading.
+INFO 2025-09-20 06:49:48,291 autoreload 51592 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:49:48,294 autoreload 51591 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:49:48,296 autoreload 51593 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:49:58,756 autoreload 51592 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/summarization_pipeline.py changed, reloading.
+INFO 2025-09-20 06:49:58,755 autoreload 51593 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/summarization_pipeline.py changed, reloading.
+INFO 2025-09-20 06:49:58,760 autoreload 51591 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/summarization_pipeline.py changed, reloading.
+INFO 2025-09-20 06:50:01,456 utils 51618 8800755904 NumExpr defaulting to 8 threads.
+INFO 2025-09-20 06:50:01,456 utils 51617 8800755904 NumExpr defaulting to 8 threads.
+INFO 2025-09-20 06:50:01,457 utils 51616 8800755904 NumExpr defaulting to 8 threads.
+INFO 2025-09-20 06:50:01,765 autoreload 51617 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:50:01,765 autoreload 51616 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:50:01,765 autoreload 51618 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:53:50,871 autoreload 51616 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/ai_services.py changed, reloading.
+INFO 2025-09-20 06:53:50,876 autoreload 51618 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/ai_services.py changed, reloading.
+INFO 2025-09-20 06:53:50,879 autoreload 51617 8800755904 /Users/thomaskanz/Documents/CMU/Hackathons/PennApps_2025/backend_nova/scraper/ai_services.py changed, reloading.
+INFO 2025-09-20 06:53:52,889 utils 51895 8800755904 NumExpr defaulting to 8 threads.
+INFO 2025-09-20 06:53:52,925 utils 51894 8800755904 NumExpr defaulting to 8 threads.
+INFO 2025-09-20 06:53:52,967 utils 51896 8800755904 NumExpr defaulting to 8 threads.
+INFO 2025-09-20 06:53:53,064 autoreload 51895 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:53:53,078 autoreload 51894 8800755904 Watching for file changes with StatReloader
+INFO 2025-09-20 06:53:53,103 autoreload 51896 8800755904 Watching for file changes with StatReloader

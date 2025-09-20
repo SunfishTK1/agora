@@ -413,5 +413,115 @@ class SystemMetrics(TimestampedModel):
             models.Index(fields=['metric_name', 'created_at']),
         ]
     
+class PageSummary(TimestampedModel):
+    """Dense summaries of scraped pages for embedding and retrieval."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    scraped_page = models.OneToOneField(
+        ScrapedPage,
+        on_delete=models.CASCADE,
+        related_name='summary'
+    )
+
+    # Summary content
+    summary_text = models.TextField(
+        help_text="Dense, information-rich summary optimized for embedding"
+    )
+    summary_length_tokens = models.PositiveIntegerField(
+        help_text="Token count of the summary text"
+    )
+
+    # Processing metadata
+    processing_time_ms = models.PositiveIntegerField(null=True)
+    model_used = models.CharField(
+        max_length=100,
+        default='azure-openai-gpt-5',
+        help_text="LLM model used for summarization"
+    )
+    chunk_count = models.PositiveIntegerField(
+        default=1,
+        help_text="Number of text chunks processed for summarization"
+    )
+
+    # Quality metrics
+    compression_ratio = models.FloatField(
+        help_text="Ratio of original content length to summary length"
+    )
+    information_density_score = models.FloatField(
+        default=0.0,
+        help_text="Estimated information density score (0-1)"
+    )
+
+    # File storage
+    file_path = models.CharField(
+        max_length=1000,
+        blank=True,
+        help_text="Path to stored summary file on disk"
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['created_at']),
+            models.Index(fields=['model_used']),
+        ]
+
     def __str__(self):
-        return f"{self.metric_name}: {self.metric_value} {self.metric_unit}"
+        return f"Summary for {self.scraped_page.url} ({self.summary_length_tokens} tokens)"
+
+    @property
+    def domain(self):
+        """Get domain from the associated scraped page."""
+        return self.scraped_page.job.domain.domain
+
+    @property
+    def url_path(self):
+        """Get URL path for file organization."""
+        from urllib.parse import urlparse
+        return urlparse(self.scraped_page.url).path
+
+
+class DocumentEmbedding(TimestampedModel):
+    """Vector embeddings for document summaries stored in Milvus."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    summary = models.ForeignKey(
+        PageSummary,
+        on_delete=models.CASCADE,
+        related_name='embeddings'
+    )
+
+    # Embedding data
+    embedding_id = models.CharField(
+        max_length=255,
+        db_index=True,
+        help_text="Unique identifier in Milvus database"
+    )
+    embedding_vector = models.JSONField(
+        help_text="Vector embedding data (stored as JSON for Django compatibility)"
+    )
+
+    # Metadata
+    model_used = models.CharField(
+        max_length=100,
+        default='text-embedding-large-3',
+        help_text="Embedding model used"
+    )
+    vector_dimensions = models.PositiveIntegerField(
+        default=3072,
+        help_text="Dimensionality of the embedding vector"
+    )
+
+    # Processing info
+    processing_time_ms = models.PositiveIntegerField(null=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['embedding_id']),
+            models.Index(fields=['model_used']),
+            models.Index(fields=['created_at']),
+        ]
+
+    def __str__(self):
+        return f"Embedding {self.embedding_id} for {self.summary.scraped_page.url}"

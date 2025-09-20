@@ -10,7 +10,7 @@ from django.db.models import Count, Avg
 from django.utils import timezone
 from .models import (
     Domain, ScrapingJob, ScrapedPage, ScrapingTemplate, 
-    ApiEndpoint, SystemMetrics
+    ApiEndpoint, SystemMetrics, PageSummary, DocumentEmbedding
 )
 
 
@@ -266,4 +266,102 @@ class SystemMetricsAdmin(admin.ModelAdmin):
     
     def has_add_permission(self, request):
         # Metrics are typically added programmatically
+        return request.user.is_superuser
+
+
+@admin.register(PageSummary)
+class PageSummaryAdmin(admin.ModelAdmin):
+    list_display = [
+        'scraped_page_url', 'summary_length_tokens', 'model_used',
+        'chunk_count', 'compression_ratio', 'information_density_score', 'created_at'
+    ]
+    list_filter = [
+        'model_used', 'chunk_count', 'created_at',
+        ('scraped_page__job__domain', admin.RelatedOnlyFieldListFilter)
+    ]
+    search_fields = ['scraped_page__url', 'scraped_page__title', 'summary_text']
+    readonly_fields = [
+        'id', 'processing_time_ms', 'compression_ratio', 'created_at', 'updated_at'
+    ]
+    raw_id_fields = ['scraped_page']
+    
+    fieldsets = (
+        ('Summary Information', {
+            'fields': ('id', 'scraped_page', 'model_used', 'summary_length_tokens')
+        }),
+        ('Processing Details', {
+            'fields': ('chunk_count', 'processing_time_ms', 'compression_ratio', 'information_density_score'),
+        }),
+        ('Content', {
+            'fields': ('summary_text',),
+            'classes': ('collapse',)
+        }),
+        ('File Storage', {
+            'fields': ('file_path',),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def scraped_page_url(self, obj):
+        if len(obj.scraped_page.url) > 60:
+            return obj.scraped_page.url[:57] + "..."
+        return obj.scraped_page.url
+    scraped_page_url.short_description = 'Source URL'
+    
+    actions = ['regenerate_summaries']
+    
+    def regenerate_summaries(self, request, queryset):
+        # This could trigger re-summarization
+        count = queryset.count()
+        self.message_user(request, f"Queued {count} summaries for regeneration.")
+    regenerate_summaries.short_description = "Regenerate selected summaries"
+
+
+@admin.register(DocumentEmbedding)
+class DocumentEmbeddingAdmin(admin.ModelAdmin):
+    list_display = [
+        'embedding_id', 'summary_url', 'model_used',
+        'vector_dimensions', 'processing_time_ms', 'created_at'
+    ]
+    list_filter = [
+        'model_used', 'vector_dimensions', 'created_at',
+        ('summary__scraped_page__job__domain', admin.RelatedOnlyFieldListFilter)
+    ]
+    search_fields = ['embedding_id', 'summary__scraped_page__url']
+    readonly_fields = [
+        'id', 'embedding_id', 'vector_dimensions', 'processing_time_ms', 
+        'created_at', 'updated_at'
+    ]
+    raw_id_fields = ['summary']
+    
+    fieldsets = (
+        ('Embedding Information', {
+            'fields': ('id', 'embedding_id', 'summary', 'model_used', 'vector_dimensions')
+        }),
+        ('Processing Details', {
+            'fields': ('processing_time_ms',),
+        }),
+        ('Vector Data', {
+            'fields': ('embedding_vector',),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def summary_url(self, obj):
+        url = obj.summary.scraped_page.url
+        if len(url) > 60:
+            return url[:57] + "..."
+        return url
+    summary_url.short_description = 'Source URL'
+    
+    def has_add_permission(self, request):
+        # Embeddings are typically created programmatically
         return request.user.is_superuser
