@@ -4,33 +4,58 @@ import validators
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urlunparse
 from protego import Protego
+from itertools import cycle
 
 
 GOOD_STATUS = "success"
 FAILED_STATUS = "failed"
 
+# Rotating list of realistic desktop browser User-Agents
+USER_AGENTS = [
+    # Chrome (Windows)
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    # Chrome (macOS)
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    # Firefox (Windows)
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0",
+    # Firefox (macOS)
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13.5; rv:125.0) Gecko/20100101 Firefox/125.0",
+    # Edge (Windows)
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Edg/124.0.0.0",
+    # Safari (macOS)
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
+]
 
-def read_robots_txt(url: str, user_agent: str = "*"):
+_UA_CYCLE = cycle(USER_AGENTS)
+
+def get_user_agent() -> str:
+    return next(_UA_CYCLE)
+
+
+def read_robots_txt(url: str, user_agent: str = None):
     parsed = urlparse(url)
     scheme = parsed.scheme or "http"
     netloc = parsed.netloc or parsed.path  # handles URLs like 'example.com'
 
     robots_url = urlunparse((scheme, netloc, "/robots.txt", "", "", ""))
+    ua = user_agent or get_user_agent()
 
     try:
-        with httpx.Client(timeout=10) as client:
+        with httpx.Client(timeout=10, headers={"User-Agent": ua}) as client:
             response = client.get(robots_url)
+            print(response.status_code)
             response.raise_for_status()
             robotstxt = response.text
     except (httpx.RequestError, httpx.HTTPStatusError):
-        return (None, None, None, None)
+        print("robots.txt not found")
+        return (None, None, None, True)
 
     rp = Protego.parse(robotstxt)
 
-    crawl_delay = rp.crawl_delay(user_agent)
-    request_rate = rp.request_rate(user_agent)
+    crawl_delay = rp.crawl_delay(ua)
+    request_rate = rp.request_rate(ua)
     preferred_host = rp.preferred_host
-    is_allowed = rp.can_fetch(url, user_agent)
+    is_allowed = rp.can_fetch(url, ua)
 
     if request_rate:
         request_rate = (request_rate.requests, request_rate.seconds)
@@ -96,28 +121,35 @@ def validate_url(url: str):
 def fetch(url: str):
     status = FAILED_STATUS
     content = ""
+    error_message = ""
 
     try:
-
-        crawl_delay, request_rate, preferred_host, is_allowed = read_robots_txt(url)
+        # Choose a consistent UA for robots check and page fetch
+        ua = get_user_agent()
+        crawl_delay, request_rate, preferred_host, is_allowed = read_robots_txt(url, user_agent=ua)
+        # robots.txt might be unavailable; treat as allowed=True per read_robots_txt implementation
 
         if crawl_delay:
             time.sleep(crawl_delay)
-            
-        if is_allowed is False:
-            return status, content
 
-        r = httpx.get(url, follow_redirects=True)
+        if is_allowed is False:
+            error_message = "Blocked by robots.txt"
+            return status, content, error_message
+
+        r = httpx.get(url, follow_redirects=True, headers={"User-Agent": ua})
 
         if r.status_code == httpx.codes.OK:
             status = GOOD_STATUS
             content = r.text
         else:
+            error_message = f"HTTP {r.status_code}"
             content = ""
+    except httpx.RequestError as e:
+        error_message = f"Request error: {e}"
     except Exception as e:
-        print(f"Request Failed {e}")
+        error_message = f"Unexpected error: {e}"
 
-    return status, content
+    return status, content, error_message
 
 
 def crawl_jobs(jobs: list):
@@ -125,7 +157,7 @@ def crawl_jobs(jobs: list):
     all_child_links = []
 
     for url in jobs:
-        status, html_content = fetch(url)
+        status, html_content, error = fetch(url)
 
         if status is GOOD_STATUS:
             title, child_links, content = parse_result(html_content, url)
@@ -136,10 +168,22 @@ def crawl_jobs(jobs: list):
                 "status": status,
                 "content": content,
                 "children": child_links,
+                "error": "",
             }
 
             crawled.append(crawl_result)
             all_child_links.extend(child_links)
+        else:
+            # Record the failure with error information
+            crawl_result = {
+                "url": url,
+                "title": "",
+                "status": status,
+                "content": "",
+                "children": [],
+                "error": error,
+            }
+            crawled.append(crawl_result)
 
     return all_child_links, crawled
 
@@ -173,8 +217,8 @@ def crawl_target(parent_url: str, recursive_depth: int = 2):
 
 
 if __name__ == "__main__":
-    target = "https://www.cmu.edu/cmufront/"
+    target = "https://www.cmu.edu/"
 
     result = crawl_target(target)
     print(result)
-    # print(len(result["crawl_result"]))
+    print(len(result["crawl_result"]))
