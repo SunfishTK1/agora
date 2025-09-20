@@ -273,5 +273,29 @@ CACHES = {
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'default'
 
+# Azure OpenAI Configuration
+AZURE_OPENAI_API_KEY = os.getenv('AZURE_OPENAI_API_KEY')
+AZURE_OPENAI_ENDPOINT = os.getenv('AZURE_OPENAI_ENDPOINT')
+AZURE_OPENAI_API_VERSION = os.getenv('AZURE_OPENAI_API_VERSION', '2024-02-01')
+AZURE_OPENAI_MODEL = os.getenv('AZURE_OPENAI_MODEL', 'gpt-5-chat')
+
+# Azure OpenAI Embedding Configuration  
+AZURE_OPENAI_EMBEDDING_API_KEY = os.getenv('AZURE_OPENAI_EMBEDDING_API_KEY')
+AZURE_OPENAI_EMBEDDING_ENDPOINT = os.getenv('AZURE_OPENAI_EMBEDDING_ENDPOINT')
+AZURE_OPENAI_EMBEDDING_API_VERSION = os.getenv('AZURE_OPENAI_EMBEDDING_API_VERSION', '2024-02-01')
+AZURE_OPENAI_EMBEDDING_MODEL = os.getenv('AZURE_OPENAI_EMBEDDING_MODEL', 'text-embedding-large-3')
+
+# OpenAI Configuration (fallback)
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
+# Vector Database Configuration
+MILVUS_DB_PATH = os.getenv('MILVUS_DB_PATH', './milvus_lite.db')
+SCRAPED_DATA_DIR = os.getenv('SCRAPED_DATA_DIR', './scraped_data')
+
+# Summarization Settings
+ENABLE_AUTO_SUMMARIZATION = os.getenv('ENABLE_AUTO_SUMMARIZATION', 'True').lower() == 'true'
+MAX_CONTEXT_TOKENS = int(os.getenv('MAX_CONTEXT_TOKENS', '120000'))
+MAX_OUTPUT_TOKENS = int(os.getenv('MAX_OUTPUT_TOKENS', '8000'))
+
 # Create logs directory if it doesn't exist
 os.makedirs(BASE_DIR / 'logs', exist_ok=True)

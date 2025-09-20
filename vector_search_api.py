@@ -14,9 +14,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
 
-from .ai_services import AzureOpenAIEmbeddingService
-from .milvus_service import get_milvus_service
-from .summarization_pipeline import SummarizationPipeline
+from scraper.ai_services import AzureOpenAIEmbeddingService
+from scraper.milvus_service import get_milvus_service
+from scraper.summarization_pipeline import SummarizationPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +124,7 @@ async def search_documents(search_query: SearchQuery):
             # Get summary content from Django if needed
             content_snippet = None
             try:
-                from .models import PageSummary
+                from scraper.models import PageSummary
                 summary = PageSummary.objects.get(id=result['summary_id'])
                 content_snippet = summary.summary_text[:200] + "..." if len(summary.summary_text) > 200 else summary.summary_text
             except:
@@ -164,7 +164,7 @@ async def get_document(summary_id: str):
         summary_id: ID of the summary to retrieve
     """
     try:
-        from .models import PageSummary, ScrapedPage
+        from scraper.models import PageSummary, ScrapedPage
 
         # Get summary
         summary = PageSummary.objects.get(id=summary_id)
@@ -260,7 +260,7 @@ async def delete_domain_data(domain: str):
         deleted_count = milvus_service.delete_by_domain(domain)
 
         # Delete from Django (this will cascade)
-        from .models import PageSummary, DocumentEmbedding
+        from scraper.models import PageSummary, DocumentEmbedding
         from django.db import transaction
 
         with transaction.atomic():

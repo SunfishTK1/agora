@@ -49,6 +49,11 @@ def create_test_data():
         }
     )
     
+    # Ensure domain is saved and has an ID
+    if created:
+        domain.save()
+        domain.refresh_from_db()
+    
     print(f"✅ Created domain: {domain.name}")
     return domain, user
 

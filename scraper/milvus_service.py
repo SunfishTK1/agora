@@ -103,11 +103,14 @@ class MilvusService:
                     schema=schema
                 )
 
-                # Create index for fast similarity search
+                # Create index for fast similarity search (using HNSW for Milvus Lite)
                 index_params = {
                     "metric_type": "COSINE",  # Cosine similarity for semantic search
-                    "index_type": "IVF_FLAT",
-                    "params": {"nlist": 1024}
+                    "index_type": "HNSW",
+                    "params": {
+                        "M": 16,
+                        "efConstruction": 200
+                    }
                 }
 
                 self.collection.create_index(
@@ -318,8 +321,11 @@ class MilvusService:
             if not self.collection.has_index():
                 index_params = {
                     "metric_type": "COSINE",
-                    "index_type": "IVF_FLAT",
-                    "params": {"nlist": 1024}
+                    "index_type": "HNSW",
+                    "params": {
+                        "M": 16,
+                        "efConstruction": 200
+                    }
                 }
                 self.collection.create_index("embedding", index_params)
                 logger.info("Created index for optimization")
