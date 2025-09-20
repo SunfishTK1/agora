@@ -293,7 +293,7 @@ MILVUS_DB_PATH = os.getenv('MILVUS_DB_PATH', './milvus_lite.db')
 SCRAPED_DATA_DIR = os.getenv('SCRAPED_DATA_DIR', './scraped_data')
 
 # Summarization Settings
-ENABLE_AUTO_SUMMARIZATION = os.getenv('ENABLE_AUTO_SUMMARIZATION', 'True').lower() == 'true'
+ENABLE_AUTO_SUMMARIZATION = os.environ.get('ENABLE_AUTO_SUMMARIZATION', 'False').lower() == 'true'
 MAX_CONTEXT_TOKENS = int(os.getenv('MAX_CONTEXT_TOKENS', '120000'))
 MAX_OUTPUT_TOKENS = int(os.getenv('MAX_OUTPUT_TOKENS', '8000'))
 

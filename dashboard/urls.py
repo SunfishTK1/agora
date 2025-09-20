@@ -25,6 +25,7 @@ urlpatterns = [
     # Analytics and monitoring
     path('analytics/', views.analytics, name='analytics'),
     path('scheduler/', views.scheduler_status, name='scheduler_status'),
+    path('enterprise/', views.data_engineer_console, name='data_engineer_console'),
     
     # API endpoints
     path('api/stats/', views.api_dashboard_stats, name='api_stats'),

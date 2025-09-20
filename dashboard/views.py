@@ -36,10 +36,10 @@ def dashboard_home(request):
     today = timezone.now().date()
     yesterday = today - timedelta(days=1)
     
+    pages_today = ScrapedPage.objects.filter(created_at__date=today).count()
+    pages_yesterday = ScrapedPage.objects.filter(created_at__date=yesterday).count()
     jobs_today = ScrapingJob.objects.filter(created_at__date=today).count()
     jobs_yesterday = ScrapingJob.objects.filter(created_at__date=yesterday).count()
-    
-    pages_today = ScrapedPage.objects.filter(created_at__date=today).count()
     success_rate_today = 0
     
     if jobs_today > 0:
@@ -58,7 +58,7 @@ def dashboard_home(request):
     for i in range(7):
         date = today - timedelta(days=i)
         jobs_count = ScrapingJob.objects.filter(created_at__date=date).count()
-        pages_count = ScrapedPage.objects.filter(created_at__date=date).count()
+        pages_count = ScrapedPage.objects.filter(scraped_at__date=date).count()
         chart_data.append({
             'date': date.strftime('%m/%d'),
             'jobs': jobs_count,
@@ -336,11 +336,11 @@ def job_detail(request, job_id):
     # Statistics
     stats = {
         'total_pages': pages.count(),
-        'successful_pages': pages.filter(status='success').count(),
-        'failed_pages': pages.filter(status='failed').count(),
-        'avg_processing_time': pages.filter(processing_time_ms__isnull=False).aggregate(
-            Avg('processing_time_ms')
-        )['processing_time_ms__avg'] or 0,
+        'successful_pages': pages.filter(crawl_status='success').count(),
+        'failed_pages': pages.filter(crawl_status='failed').count(),
+        'avg_processing_time': pages.filter(processing_time__isnull=False).aggregate(
+            Avg('processing_time')
+        )['processing_time__avg'] or 0,
     }
     
     context = {
@@ -372,8 +372,8 @@ def analytics(request):
     pages = ScrapedPage.objects.filter(created_at__gte=start_date)
     page_stats = {
         'total': pages.count(),
-        'successful': pages.filter(status='success').count(),
-        'failed': pages.filter(status='failed').count(),
+        'successful': pages.filter(crawl_status='success').count(),
+        'failed': pages.filter(crawl_status='failed').count(),
     }
     
     # Daily activity data
@@ -387,7 +387,7 @@ def analytics(request):
             'date': date.strftime('%m/%d'),
             'jobs': day_jobs.count(),
             'pages': day_pages.count(),
-            'success_rate': (day_pages.filter(status='success').count() / max(day_pages.count(), 1)) * 100
+            'success_rate': (day_pages.filter(crawl_status='success').count() / max(day_pages.count(), 1)) * 100
         })
     
     daily_data.reverse()
@@ -431,6 +431,23 @@ def scheduler_status(request):
     }
     
     return render(request, 'dashboard/scheduler_status.html', context)
+
+
+def data_engineer_console(request):
+    """
+    Enterprise Data Engineer Console for $25M/Year Platform.
+    Professional interface for batch domain processing.
+    """
+    
+    # Get enterprise metrics
+    context = {
+        'total_domains': Domain.objects.count(),
+        'active_domains': Domain.objects.filter(status='active').count(),
+        'batch_jobs': ScrapingJob.objects.filter(job_type='batch_api').count(),
+        'enterprise_pages': ScrapedPage.objects.count(),
+    }
+    
+    return render(request, 'dashboard/data_engineer_console.html', context)
 
 
 # API endpoints for AJAX requests

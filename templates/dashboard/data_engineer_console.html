@@ -1,0 +1,507 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Data Engineer Console - Enterprise Scraping Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .console-container {
+        background: #1a1a1a;
+        color: #00ff41;
+        font-family: 'Courier New', monospace;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .console-header {
+        border-bottom: 2px solid #00ff41;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .enterprise-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin: 20px 0;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    
+    .batch-config {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 15px 0;
+    }
+    
+    .domain-input {
+        background: #2a2a2a;
+        color: #00ff41;
+        border: 1px solid #00ff41;
+        border-radius: 4px;
+        padding: 10px;
+        width: 100%;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .enterprise-btn {
+        background: linear-gradient(45deg, #ff6b6b, #ffa500);
+        border: none;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .enterprise-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255,107,107,0.4);
+    }
+    
+    .status-panel {
+        background: #e8f5e8;
+        border-left: 4px solid #28a745;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 0 8px 8px 0;
+    }
+    
+    .results-viewer {
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 15px 0;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .metric-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .metric-value {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .frequency-selector {
+        background: linear-gradient(135deg, #74b9ff, #0984e3);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 20px;
+        margin: 5px;
+        cursor: pointer;
+    }
+    
+    .path-pattern {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 4px;
+        padding: 8px;
+        margin: 5px 0;
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="enterprise-card">
+        <h1><i class="fas fa-code"></i> Data Engineer Console</h1>
+        <p class="lead">$25M/Year Enterprise Web Scraping Infrastructure</p>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="activeJobsCount">0</div>
+                    <div>Active Jobs</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="domainsManaged">0</div>
+                    <div>Domains Managed</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="pagesScraped">0</div>
+                    <div>Pages Scraped</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="throughputRate">0</div>
+                    <div>Pages/Hour</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enterprise Batch Configuration -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-cogs"></i> Enterprise Batch Configuration</h3>
+        </div>
+        <div class="card-body">
+            <form id="enterpriseBatchForm">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="batch-config">
+                            <h5>Domain Configuration</h5>
+                            <div class="form-group">
+                                <label>Domain/Subdomain List</label>
+                                <textarea class="domain-input" id="domainList" rows="8" placeholder="example.com
+api.example.com/v1
+subdomain.example.org/docs
+app.mysite.com/admin
+
+One domain per line. Include starting paths if needed."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="batch-config">
+                            <h5>Scraping Parameters</h5>
+                            
+                            <div class="form-group">
+                                <label>Crawl Depth (Subpath Levels)</label>
+                                <select class="form-control" id="maxDepth">
+                                    <option value="1">1 Level - Current path only</option>
+                                    <option value="2">2 Levels - One level deeper</option>
+                                    <option value="3" selected>3 Levels - Recommended</option>
+                                    <option value="4">4 Levels - Deep crawl</option>
+                                    <option value="5">5 Levels - Very deep</option>
+                                    <option value="10">10 Levels - Maximum depth</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Max Pages per Domain</label>
+                                <select class="form-control" id="maxPages">
+                                    <option value="10">10 Pages - Quick test</option>
+                                    <option value="50">50 Pages - Small site</option>
+                                    <option value="100" selected>100 Pages - Medium site</option>
+                                    <option value="500">500 Pages - Large site</option>
+                                    <option value="1000">1000 Pages - Very large</option>
+                                    <option value="5000">5000 Pages - Enterprise</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Scraping Frequency</label>
+                                <div>
+                                    <button type="button" class="frequency-selector" data-hours="1">Every Hour</button>
+                                    <button type="button" class="frequency-selector" data-hours="6">Every 6 Hours</button>
+                                    <button type="button" class="frequency-selector" data-hours="12">Every 12 Hours</button>
+                                    <button type="button" class="frequency-selector active" data-hours="24">Daily</button>
+                                    <button type="button" class="frequency-selector" data-hours="168">Weekly</button>
+                                    <button type="button" class="frequency-selector" data-hours="720">Monthly</button>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Priority Level</label>
+                                <select class="form-control" id="priority">
+                                    <option value="low">Low - Background processing</option>
+                                    <option value="medium" selected>Medium - Standard</option>
+                                    <option value="high">High - Priority queue</option>
+                                    <option value="urgent">Urgent - Immediate</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Advanced Path Configuration -->
+                <div class="batch-config">
+                    <h5>Advanced Path Configuration</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Include Path Patterns (Optional)</label>
+                                <input type="text" class="form-control" id="includePatterns" 
+                                       placeholder="/api/*, /docs/*, /v1/*">
+                                <small class="text-muted">Comma-separated patterns. Use * for wildcards.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Exclude Path Patterns (Optional)</label>
+                                <input type="text" class="form-control" id="excludePatterns" 
+                                       placeholder="/private/*, /admin/*, /login/*">
+                                <small class="text-muted">Comma-separated patterns to exclude.</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="includeSubdomains">
+                        <label class="form-check-label">
+                            Include all subdomains automatically
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <button type="submit" class="enterprise-btn">
+                        <i class="fas fa-rocket"></i> Launch Enterprise Batch Scraping
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Console Output -->
+    <div class="console-container">
+        <div class="console-header">
+            <h4><i class="fas fa-terminal"></i> Enterprise Console Output</h4>
+        </div>
+        <div id="consoleOutput">
+            <div>> Enterprise Scraping Platform Ready</div>
+            <div>> Waiting for batch configuration...</div>
+        </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="card" id="resultsPanel" style="display: none;">
+        <div class="card-header">
+            <h3><i class="fas fa-chart-bar"></i> Batch Processing Results</h3>
+        </div>
+        <div class="card-body">
+            <div class="status-panel" id="statusPanel">
+                <strong>Status:</strong> <span id="batchStatus">Ready</span>
+            </div>
+            
+            <div class="results-viewer" id="resultsViewer">
+                <p>Results will appear here after batch processing...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedFrequency = 24;
+let activeBatchId = null;
+
+// Frequency selector handling
+document.querySelectorAll('.frequency-selector').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.frequency-selector').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        selectedFrequency = parseInt(this.dataset.hours);
+        addConsoleOutput(`> Frequency set to ${this.textContent}`);
+    });
+});
+
+// Console output function
+function addConsoleOutput(message) {
+    const console = document.getElementById('consoleOutput');
+    const timestamp = new Date().toLocaleTimeString();
+    console.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+    console.scrollTop = console.scrollHeight;
+}
+
+// Load dashboard stats
+function loadDashboardStats() {
+    fetch('/api/stats/')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('activeJobsCount').textContent = data.jobs?.running || 0;
+            document.getElementById('domainsManaged').textContent = data.domains?.total || 0;
+            document.getElementById('pagesScraped').textContent = data.pages?.total || 0;
+            
+            // Calculate throughput
+            const throughput = Math.round((data.pages?.total || 0) / 24);
+            document.getElementById('throughputRate').textContent = throughput;
+        })
+        .catch(error => {
+            addConsoleOutput(`> Error loading stats: ${error.message}`);
+        });
+}
+
+// Enterprise batch form submission
+document.getElementById('enterpriseBatchForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    addConsoleOutput('> Starting enterprise batch processing...');
+    
+    // Parse domain list
+    const domainList = document.getElementById('domainList').value.trim();
+    if (!domainList) {
+        addConsoleOutput('> ERROR: No domains specified');
+        return;
+    }
+    
+    const domains = domainList.split('\n').filter(d => d.trim());
+    addConsoleOutput(`> Processing ${domains.length} domains`);
+    
+    // Build batch request
+    const requests = domains.map(domainLine => {
+        const parts = domainLine.trim().split('/');
+        const domain = parts[0];
+        const startingPath = parts.length > 1 ? '/' + parts.slice(1).join('/') : '';
+        
+        return {
+            domain: domain,
+            starting_path: startingPath,
+            max_depth: parseInt(document.getElementById('maxDepth').value),
+            max_pages: parseInt(document.getElementById('maxPages').value),
+            frequency_hours: selectedFrequency,
+            include_subdomains: document.getElementById('includeSubdomains').checked,
+            path_patterns: document.getElementById('includePatterns').value.split(',').map(s => s.trim()).filter(s => s),
+            exclude_patterns: document.getElementById('excludePatterns').value.split(',').map(s => s.trim()).filter(s => s),
+            priority: document.getElementById('priority').value
+        };
+    });
+    
+    addConsoleOutput(`> Batch configuration ready`);
+    addConsoleOutput(`> Max depth: ${requests[0].max_depth} levels`);
+    addConsoleOutput(`> Max pages: ${requests[0].max_pages} per domain`);
+    addConsoleOutput(`> Frequency: Every ${selectedFrequency} hours`);
+    
+    // Submit batch request
+    fetch('/api/enterprise/batch-scrape/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            requests: requests
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.batch_id) {
+            activeBatchId = data.batch_id;
+            addConsoleOutput(`> ✅ Batch launched successfully`);
+            addConsoleOutput(`> Batch ID: ${data.batch_id}`);
+            addConsoleOutput(`> Processing ${data.total_requests} requests...`);
+            
+            document.getElementById('resultsPanel').style.display = 'block';
+            document.getElementById('batchStatus').textContent = 'Processing...';
+            
+            // Display results
+            displayBatchResults(data);
+        } else {
+            addConsoleOutput(`> ❌ Batch failed: ${data.error || 'Unknown error'}`);
+        }
+    })
+    .catch(error => {
+        addConsoleOutput(`> ❌ Network error: ${error.message}`);
+    });
+});
+
+function displayBatchResults(data) {
+    const viewer = document.getElementById('resultsViewer');
+    
+    let html = `
+        <div class="row mb-3">
+            <div class="col-md-3"><strong>Batch ID:</strong> ${data.batch_id}</div>
+            <div class="col-md-3"><strong>Total Requests:</strong> ${data.total_requests}</div>
+            <div class="col-md-3"><strong>Successful:</strong> ${data.successful_jobs}</div>
+            <div class="col-md-3"><strong>Processing Time:</strong> ${data.processing_time_seconds?.toFixed(2)}s</div>
+        </div>
+        
+        <h5>Results:</h5>
+    `;
+    
+    if (data.results && data.results.length > 0) {
+        data.results.forEach((result, index) => {
+            html += `
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <h6 class="card-title">${result.starting_domain}</h6>
+                        <p><strong>URLs Scraped:</strong> ${result.total_pages}</p>
+                        <p><strong>Content Retrieved:</strong> ${Object.keys(result.webpage_contents || {}).length} pages</p>
+                        <button class="btn btn-sm btn-info" onclick="showWebpageContent('${result.job_id}')">
+                            View Content
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    if (data.errors && data.errors.length > 0) {
+        html += '<h5 class="text-danger">Errors:</h5>';
+        data.errors.forEach(error => {
+            html += `<div class="alert alert-danger">${error.domain}: ${error.error}</div>`;
+        });
+    }
+    
+    viewer.innerHTML = html;
+    document.getElementById('batchStatus').textContent = 'Completed';
+}
+
+function showWebpageContent(jobId) {
+    fetch(`/api/enterprise/jobs/${jobId}/results/`)
+        .then(response => response.json())
+        .then(data => {
+            // Open modal or new page with webpage contents
+            const newWindow = window.open('', '_blank');
+            let html = `
+                <html>
+                <head><title>Webpage Contents - ${data.starting_domain}</title></head>
+                <body style="font-family: Arial, sans-serif; padding: 20px;">
+                <h1>Scraped Content: ${data.starting_domain}</h1>
+            `;
+            
+            Object.entries(data.webpage_contents || {}).forEach(([url, content]) => {
+                html += `
+                    <div style="border: 1px solid #ddd; margin: 20px 0; padding: 15px;">
+                        <h3>${url}</h3>
+                        <pre style="white-space: pre-wrap; background: #f8f9fa; padding: 10px;">${content}</pre>
+                    </div>
+                `;
+            });
+            
+            html += '</body></html>';
+            newWindow.document.write(html);
+        })
+        .catch(error => {
+            addConsoleOutput(`> Error loading content: ${error.message}`);
+        });
+}
+
+// CSRF token helper
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardStats();
+    addConsoleOutput('> Enterprise Data Engineer Console initialized');
+    addConsoleOutput('> Platform ready for batch processing');
+    
+    // Refresh stats every 30 seconds
+    setInterval(loadDashboardStats, 30000);
+});
+</script>
+{% endblock %}

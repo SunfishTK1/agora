@@ -97,7 +97,7 @@ class ScrapingService:
         try:
             if self.use_dummy_api:
                 # Use dummy API for testing (fallback)
-                scraped_results = self._scrape_with_dummy_api(domain, job)
+                scraped_results = self._dummy_scrape_pages(domain, job)
                 # Convert to agora format
                 agora_results = []
                 for result in scraped_results:
@@ -152,7 +152,7 @@ class ScrapingService:
             
             results['status'] = 'completed'
             # Auto-trigger summarization pipeline if enabled
-            if self.enable_auto_summarization and results['summary']['successful_pages'] > 0:
+            if self.enable_auto_summarization and results['successful_pages'] > 0:
                 try:
                     logger.info(f"Starting auto-summarization for job {job.id}")
                     summarization_stats = self.summarization_pipeline.process_scraped_pages(
@@ -236,12 +236,6 @@ class ScrapingService:
         except Exception as e:
             logger.error(f"Error saving scraped page {crawl_result.url}: {str(e)}")
             return None
-            
-            results['status'] = 'error'
-            results['error'] = str(e)
-            results['completed_at'] = timezone.now().isoformat()
-            
-            return results
     
     def _dummy_scrape_pages(self, domain: Domain, job: ScrapingJob) -> List[ScrapingResult]:
         """

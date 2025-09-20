@@ -113,7 +113,7 @@ class ScrapingJobSerializer(serializers.ModelSerializer):
 
 
 class ScrapedPageSerializer(serializers.ModelSerializer):
-    """Serializer for scraped page data."""
+    """Serializer for scraped page data with agora crawler enhancements."""
     
     job_id = serializers.UUIDField(source='job.id', read_only=True)
     
@@ -121,21 +121,24 @@ class ScrapedPageSerializer(serializers.ModelSerializer):
         model = ScrapedPage
         fields = [
             'id', 'job_id', 'url', 'depth_level', 'title', 'content', 'status_code',
-            'content_type', 'content_length', 'status', 'processing_time_ms',
+            'content_type', 'content_length', 'file_size', 'status', 'processing_time_ms',
             'error_message', 'extracted_data', 'links_found', 'internal_links',
-            'external_links', 'created_at', 'updated_at'
+            'external_links', 'robots_allowed', 'crawl_delay_used', 'processing_time',
+            'crawl_depth', 'parent_url', 'crawl_status', 'meta_description', 
+            'meta_keywords', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'job_id', 'created_at', 'updated_at']
 
 
 class ScrapedPageSummarySerializer(serializers.ModelSerializer):
-    """Lightweight serializer for page summaries."""
+    """Lightweight serializer for page summaries with agora crawler fields."""
     
     class Meta:
         model = ScrapedPage
         fields = [
             'id', 'url', 'title', 'status', 'status_code', 'content_length',
-            'processing_time_ms', 'created_at'
+            'processing_time_ms', 'crawl_status', 'robots_allowed', 'crawl_depth',
+            'processing_time', 'created_at'
         ]
 
 

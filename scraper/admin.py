@@ -160,11 +160,11 @@ class ScrapingJobAdmin(admin.ModelAdmin):
 class ScrapedPageAdmin(admin.ModelAdmin):
     list_display = [
         'url_short', 'job_link', 'crawl_status', 'status_code',
-        'crawl_depth', 'file_size', 'processing_time', 'scraped_at'
+        'crawl_depth', 'file_size', 'processing_time', 'created_at'
     ]
-    list_filter = ['crawl_status', 'status_code', 'crawl_depth', 'robots_allowed', 'scraped_at']
+    list_filter = ['crawl_status', 'status_code', 'crawl_depth', 'robots_allowed', 'created_at']
     search_fields = ['url', 'title', 'content']
-    readonly_fields = ['scraped_at', 'file_size', 'processing_time']
+    readonly_fields = ['created_at', 'file_size', 'processing_time']
     raw_id_fields = ['job']
     
     fieldsets = (
@@ -186,7 +186,7 @@ class ScrapedPageAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Timestamps', {
-            'fields': ('scraped_at',),
+            'fields': ('created_at',),
             'classes': ('collapse',)
         })
     )

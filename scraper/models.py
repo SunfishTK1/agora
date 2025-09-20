@@ -255,13 +255,15 @@ class ScrapingJob(TimestampedModel):
 
 
 class ScrapedPage(TimestampedModel):
-    """Individual scraped page data."""
+    """Individual scraped page data with agora crawler enhancements."""
     
     STATUS_CHOICES = [
         ('success', 'Success'),
         ('failed', 'Failed'),
         ('skipped', 'Skipped'),
         ('duplicate', 'Duplicate'),
+        ('robots_blocked', 'Robots Blocked'),
+        ('invalid_url', 'Invalid URL'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -279,12 +281,14 @@ class ScrapedPage(TimestampedModel):
     # Page content
     title = models.CharField(max_length=500, blank=True)
     content = models.TextField(blank=True, help_text="Extracted text content")
-    raw_html = models.TextField(blank=True, help_text="Raw HTML content")
+    html_content = models.TextField(blank=True, help_text="Raw HTML content")
+    raw_html = models.TextField(blank=True, help_text="Raw HTML content (legacy)")
     
     # Metadata
     status_code = models.PositiveIntegerField(null=True)
     content_type = models.CharField(max_length=100, blank=True)
     content_length = models.BigIntegerField(null=True)
+    file_size = models.PositiveIntegerField(default=0, help_text="File size in bytes")
     last_modified = models.DateTimeField(null=True, blank=True)
     
     # Processing status
@@ -295,6 +299,27 @@ class ScrapedPage(TimestampedModel):
     )
     processing_time_ms = models.PositiveIntegerField(null=True)
     error_message = models.TextField(blank=True)
+    
+    # Agora crawler specific fields
+    robots_allowed = models.BooleanField(default=True, help_text="Whether robots.txt allows crawling this URL")
+    crawl_delay_used = models.FloatField(null=True, blank=True, help_text="Crawl delay applied in seconds")
+    processing_time = models.FloatField(default=0.0, help_text="Time taken to process this page in seconds")
+    crawl_depth = models.PositiveIntegerField(default=0, help_text="Depth level in recursive crawl")
+    parent_url = models.URLField(max_length=2000, blank=True, help_text="URL that linked to this page")
+    crawl_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('success', 'Success'),
+            ('failed', 'Failed'),
+            ('robots_blocked', 'Robots Blocked'),
+            ('invalid_url', 'Invalid URL'),
+        ],
+        default='success'
+    )
+    
+    # SEO and metadata fields
+    meta_description = models.TextField(blank=True)
+    meta_keywords = models.TextField(blank=True)
     
     # Extracted data (extensible structure)
     extracted_data = models.JSONField(
@@ -314,17 +339,23 @@ class ScrapedPage(TimestampedModel):
             models.Index(fields=['job', 'status']),
             models.Index(fields=['url_hash']),
             models.Index(fields=['status', 'created_at']),
+            models.Index(fields=['crawl_status']),
+            models.Index(fields=['crawl_depth']),
+            models.Index(fields=['robots_allowed']),
         ]
         unique_together = ['job', 'url_hash']
     
     def __str__(self):
-        return f"{self.url} ({self.status})"
+        return f"{self.url} ({self.crawl_status or self.status})"
     
     def save(self, *args, **kwargs):
         # Generate URL hash for deduplication
         if self.url:
             import hashlib
             self.url_hash = hashlib.sha256(self.url.encode()).hexdigest()
+        # Ensure file_size is set
+        if not self.file_size and self.content:
+            self.file_size = len(self.content.encode('utf-8'))
         super().save(*args, **kwargs)
 
 
@@ -396,50 +427,6 @@ class ApiEndpoint(TimestampedModel):
         return f"{self.name} ({self.method} {self.endpoint_url})"
 
 
-class ScrapedPage(models.Model):
-    """Individual scraped page data with agora crawler enhancements."""
-    job = models.ForeignKey(ScrapingJob, on_delete=models.CASCADE, related_name='pages')
-    url = models.URLField(max_length=2000)
-    title = models.CharField(max_length=500, blank=True)
-    content = models.TextField()
-    html_content = models.TextField(blank=True)
-    status_code = models.PositiveIntegerField(null=True, blank=True)
-    scraped_at = models.DateTimeField(auto_now_add=True)
-    file_size = models.PositiveIntegerField(default=0, help_text="File size in bytes")
-    
-    # SEO and metadata fields
-    meta_description = models.TextField(blank=True)
-    meta_keywords = models.TextField(blank=True)
-    
-    # Agora crawler specific fields
-    robots_allowed = models.BooleanField(default=True, help_text="Whether robots.txt allows crawling this URL")
-    crawl_delay_used = models.FloatField(null=True, blank=True, help_text="Crawl delay applied in seconds")
-    processing_time = models.FloatField(default=0.0, help_text="Time taken to process this page in seconds")
-    crawl_depth = models.PositiveIntegerField(default=0, help_text="Depth level in recursive crawl")
-    parent_url = models.URLField(max_length=2000, blank=True, help_text="URL that linked to this page")
-    crawl_status = models.CharField(
-        max_length=20,
-        choices=[
-            ('success', 'Success'),
-            ('failed', 'Failed'),
-            ('robots_blocked', 'Robots Blocked'),
-            ('invalid_url', 'Invalid URL'),
-        ],
-        default='success'
-    )
-    error_message = models.TextField(blank=True, help_text="Error message if crawling failed")
-    
-    class Meta:
-        unique_together = ['job', 'url']
-        ordering = ['-scraped_at']
-        indexes = [
-            models.Index(fields=['crawl_status']),
-            models.Index(fields=['crawl_depth']),
-            models.Index(fields=['robots_allowed']),
-        ]
-    
-    def __str__(self):
-        return f"{self.url} ({self.job.domain.name}) - {self.crawl_status}"
 
 
 class SystemMetrics(TimestampedModel):
