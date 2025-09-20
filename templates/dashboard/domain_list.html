@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Domains - Scraping Platform{% endblock %}
+{% block page_title %}Domain Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>Domains</h2>
+        <p class="text-muted">Manage your scraping domains and configurations</p>
+    </div>
+    <a href="{% url 'dashboard:domain_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Add Domain
+    </a>
+</div>
+
+<!-- Filters and Search -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="search" 
+                       placeholder="Search domains..." value="{{ search }}">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="status">
+                    <option value="">All Statuses</option>
+                    {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if value == status_filter %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-search"></i> Filter
+                </button>
+            </div>
+            <div class="col-md-3">
+                {% if search or status_filter %}
+                    <a href="{% url 'dashboard:domain_list' %}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Domain List -->
+<div class="card">
+    <div class="card-body">
+        {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Domain</th>
+                            <th>Status</th>
+                            <th>Frequency</th>
+                            <th>Jobs</th>
+                            <th>Success Rate</th>
+                            <th>Next Scrape</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for domain in page_obj %}
+                        <tr>
+                            <td>
+                                <div>
+                                    <a href="{% url 'dashboard:domain_detail' domain.id %}" 
+                                       class="fw-semibold text-decoration-none">
+                                        {{ domain.name }}
+                                    </a>
+                                    <small class="text-muted d-block">{{ domain.domain }}</small>
+                                    <small class="text-muted">Depth: {{ domain.max_depth }}, Max Pages: {{ domain.max_pages }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-badge status-{{ domain.status }}">
+                                    {{ domain.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark">
+                                    Every {{ domain.scrape_frequency_hours }}h
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span class="fw-semibold">{{ domain.job_count }} total</span>
+                                    {% if domain.recent_job_count > 0 %}
+                                        <small class="text-success">{{ domain.recent_job_count }} this week</small>
+                                    {% else %}
+                                        <small class="text-muted">No recent activity</small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                {% if domain.total_scrapes > 0 %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress me-2" style="width: 60px; height: 8px;">
+                                            <div class="progress-bar bg-success" 
+                                                 style="width: {{ domain.success_rate }}%"></div>
+                                        </div>
+                                        <span class="small">{{ domain.success_rate }}%</span>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if domain.next_scrape %}
+                                    <span data-timestamp="{{ domain.next_scrape.isoformat }}">
+                                        {{ domain.next_scrape|timesince }} ago
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">Not scheduled</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'dashboard:domain_detail' domain.id %}" 
+                                       class="btn btn-outline-primary" title="View Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'dashboard:domain_edit' domain.id %}" 
+                                       class="btn btn-outline-secondary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    
+                                    <!-- Action Dropdown -->
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" 
+                                                data-bs-toggle="dropdown">
+                                            <span class="visually-hidden">Actions</span>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            {% if domain.status == 'active' %}
+                                                <li>
+                                                    <form method="post" action="{% url 'dashboard:domain_action' domain.id 'scrape_now' %}" 
+                                                          style="display: inline;">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="bi bi-play-circle text-primary"></i> Scrape Now
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                                <li>
+                                                    <form method="post" action="{% url 'dashboard:domain_action' domain.id 'pause' %}" 
+                                                          style="display: inline;">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="bi bi-pause-circle text-warning"></i> Pause
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            {% else %}
+                                                <li>
+                                                    <form method="post" action="{% url 'dashboard:domain_action' domain.id 'activate' %}" 
+                                                          style="display: inline;">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="bi bi-play-circle text-success"></i> Activate
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            {% endif %}
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="#" 
+                                                   onclick="confirmDelete('{{ domain.name }}', '{% url 'dashboard:domain_action' domain.id 'delete' %}')">
+                                                    <i class="bi bi-trash"></i> Delete
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">
+                                {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+            
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-globe text-muted" style="font-size: 4rem;"></i>
+                <h4 class="mt-3">No Domains Found</h4>
+                {% if search or status_filter %}
+                    <p class="text-muted">No domains match your current filters.</p>
+                    <a href="{% url 'dashboard:domain_list' %}" class="btn btn-outline-primary">
+                        Clear Filters
+                    </a>
+                {% else %}
+                    <p class="text-muted">Get started by adding your first domain to scrape.</p>
+                    <a href="{% url 'dashboard:domain_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add First Domain
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the domain <strong id="deleteDomainName"></strong>?</p>
+                <p class="text-danger">This action cannot be undone and will delete all associated jobs and scraped data.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete Domain</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(domainName, deleteUrl) {
+    document.getElementById('deleteDomainName').textContent = domainName;
+    document.getElementById('deleteForm').action = deleteUrl;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// Auto-refresh status every 30 seconds
+setInterval(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

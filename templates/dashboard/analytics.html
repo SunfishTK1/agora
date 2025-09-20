@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+
+{% block title %}Analytics - Scraping Platform{% endblock %}
+{% block page_title %}Performance Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>Analytics Dashboard</h2>
+        <p class="text-muted">Performance insights and data trends</p>
+    </div>
+    <div class="dropdown">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-calendar-range"></i> Last {{ days }} Days
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="?days=7">Last 7 Days</a></li>
+            <li><a class="dropdown-item" href="?days=14">Last 14 Days</a></li>
+            <li><a class="dropdown-item" href="?days=30">Last 30 Days</a></li>
+            <li><a class="dropdown-item" href="?days=90">Last 90 Days</a></li>
+        </ul>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number text-primary">{{ job_stats.total }}</div>
+                    <div class="stat-label">Total Jobs</div>
+                </div>
+                <i class="bi bi-briefcase text-primary" style="font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number text-success">{{ job_stats.completed }}</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <i class="bi bi-check-circle text-success" style="font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number text-danger">{{ job_stats.failed }}</div>
+                    <div class="stat-label">Failed</div>
+                </div>
+                <i class="bi bi-x-circle text-danger" style="font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-number text-info">{{ page_stats.total }}</div>
+                    <div class="stat-label">Pages Scraped</div>
+                </div>
+                <i class="bi bi-file-earmark-text text-info" style="font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Activity Chart -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Daily Activity Trends</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="activityTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Success Rate Chart -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Success Rate</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="successRateChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Pages Success:</span>
+                        <span class="fw-bold text-success">
+                            {{ page_stats.successful|default:0 }}/{{ page_stats.total|default:0 }}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Jobs Success:</span>
+                        <span class="fw-bold text-success">
+                            {{ job_stats.completed|default:0 }}/{{ job_stats.total|default:0 }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <!-- Top Performing Domains -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Top Performing Domains</h5>
+            </div>
+            <div class="card-body">
+                {% if top_domains %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Domain</th>
+                                    <th>Jobs</th>
+                                    <th>Pages</th>
+                                    <th>Performance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for domain in top_domains %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'dashboard:domain_detail' domain.id %}" class="text-decoration-none">
+                                            {{ domain.name|truncatechars:20 }}
+                                        </a>
+                                    </td>
+                                    <td>{{ domain.recent_jobs }}</td>
+                                    <td>{{ domain.recent_pages|default:0 }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-success" 
+                                                 style="width: {{ domain.success_rate|default:0 }}%"></div>
+                                        </div>
+                                        <small class="text-muted">{{ domain.success_rate|default:0 }}%</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-graph-up text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2">No domain activity in selected period</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Metrics -->
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">System Performance Metrics</h5>
+            </div>
+            <div class="card-body">
+                {% if metrics %}
+                    {% for metric in metrics %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-capitalize">{{ metric.metric_name|title }}</span>
+                        <div class="text-end">
+                            <span class="fw-bold">{{ metric.avg_value|floatformat:2 }}</span>
+                            <small class="text-muted d-block">{{ metric.count }} samples</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="bi bi-speedometer text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2">No performance data available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Insights -->
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Performance Insights</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 text-center">
+                            <i class="bi bi-clock text-primary" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">Average Processing Time</h6>
+                            <p class="text-muted mb-0">
+                                {% if metrics %}
+                                    {{ metrics.job_duration_seconds.average|default:"N/A" }}s
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 text-center">
+                            <i class="bi bi-graph-up text-success" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">Pages per Second</h6>
+                            <p class="text-muted mb-0">
+                                {% if metrics %}
+                                    {{ metrics.pages_per_second.average|default:"N/A" }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 text-center">
+                            <i class="bi bi-trophy text-warning" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">Overall Success Rate</h6>
+                            <p class="text-muted mb-0">
+                                {% if job_stats.total > 0 %}
+                                    {{ job_stats.completed|mul:100|div:job_stats.total|floatformat:1 }}%
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Activity Trend Chart
+    const trendCtx = document.getElementById('activityTrendChart').getContext('2d');
+    const dailyData = {{ daily_data|safe }};
+    
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: dailyData.map(d => d.date),
+            datasets: [{
+                label: 'Jobs',
+                data: dailyData.map(d => d.jobs),
+                borderColor: 'rgb(37, 99, 235)',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                tension: 0.4,
+                fill: false
+            }, {
+                label: 'Pages',
+                data: dailyData.map(d => d.pages),
+                borderColor: 'rgb(5, 150, 105)',
+                backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                tension: 0.4,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Success Rate Doughnut Chart
+    const successCtx = document.getElementById('successRateChart').getContext('2d');
+    
+    const pageSuccessRate = {{ page_stats.total }} > 0 ? 
+        Math.round(({{ page_stats.successful }} / {{ page_stats.total }}) * 100) : 0;
+    
+    new Chart(successCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Successful', 'Failed'],
+            datasets: [{
+                data: [{{ page_stats.successful|default:0 }}, {{ page_stats.failed|default:0 }}],
+                backgroundColor: [
+                    'rgba(5, 150, 105, 0.8)',
+                    'rgba(220, 38, 38, 0.8)'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

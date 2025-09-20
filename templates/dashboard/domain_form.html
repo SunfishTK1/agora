@@ -1,0 +1,400 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ title }} - Scraping Platform{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{{ title }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3">
+                                <i class="bi bi-info-circle"></i> Basic Information
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.name.id_for_label }}" class="form-label">
+                                    Domain Name <span class="text-danger">*</span>
+                                </label>
+                                {{ form.name|add_class:"form-control" }}
+                                {% if form.name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">{{ form.name.help_text }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+                                {{ form.status|add_class:"form-select" }}
+                                {% if form.status.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.status.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="{{ form.base_url.id_for_label }}" class="form-label">
+                                    Base URL <span class="text-danger">*</span>
+                                </label>
+                                {{ form.base_url|add_class:"form-control" }}
+                                {% if form.base_url.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.base_url.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">{{ form.base_url.help_text }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.protocol.id_for_label }}" class="form-label">Protocol</label>
+                                {{ form.protocol|add_class:"form-select" }}
+                                {% if form.protocol.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.protocol.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Scraping Configuration -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3">
+                                <i class="bi bi-gear"></i> Scraping Configuration
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.max_depth.id_for_label }}" class="form-label">
+                                    Max Depth <span class="text-danger">*</span>
+                                </label>
+                                {{ form.max_depth|add_class:"form-control" }}
+                                {% if form.max_depth.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.max_depth.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">{{ form.max_depth.help_text }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.max_pages.id_for_label }}" class="form-label">
+                                    Max Pages <span class="text-danger">*</span>
+                                </label>
+                                {{ form.max_pages|add_class:"form-control" }}
+                                {% if form.max_pages.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.max_pages.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">{{ form.max_pages.help_text }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.scrape_frequency_hours.id_for_label }}" class="form-label">
+                                    Frequency (Hours) <span class="text-danger">*</span>
+                                </label>
+                                {{ form.scrape_frequency_hours|add_class:"form-control" }}
+                                {% if form.scrape_frequency_hours.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.scrape_frequency_hours.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">{{ form.scrape_frequency_hours.help_text }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Configuration -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3">
+                                <i class="bi bi-code-slash"></i> Advanced Configuration
+                                <small class="text-muted">(Optional)</small>
+                            </h6>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="{{ form.advanced_config.id_for_label }}" class="form-label">
+                                    Advanced Configuration JSON
+                                </label>
+                                {{ form.advanced_config|add_class:"form-control font-monospace" }}
+                                {% if form.advanced_config.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.advanced_config.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">{{ form.advanced_config.help_text }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Configuration Presets -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title text-secondary mb-3">
+                                        <i class="bi bi-lightbulb"></i> Quick Presets
+                                    </h6>
+                                    <div class="row g-2">
+                                        <div class="col-md-3">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" 
+                                                    onclick="applyPreset('light')">
+                                                Light Scraping
+                                            </button>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" 
+                                                    onclick="applyPreset('standard')">
+                                                Standard
+                                            </button>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" 
+                                                    onclick="applyPreset('intensive')">
+                                                Intensive
+                                            </button>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" 
+                                                    onclick="applyPreset('enterprise')">
+                                                Enterprise
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted mt-2 d-block">
+                                        Click a preset to automatically configure depth, pages, and frequency.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Errors -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'dashboard:domain_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Domains
+                        </a>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary me-2" onclick="validateForm()">
+                                <i class="bi bi-check-circle"></i> Validate
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Save Domain
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Advanced Config Help Modal -->
+<div class="modal fade" id="configHelpModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Advanced Configuration Help</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Available Configuration Options:</h6>
+                <pre class="bg-light p-3 rounded"><code>{
+  "user_agent": "Custom Bot Name",
+  "delay": 1.5,
+  "headers": {
+    "Accept": "text/html",
+    "Accept-Language": "en-US"
+  },
+  "respect_robots_txt": true,
+  "follow_redirects": true,
+  "max_redirects": 5,
+  "timeout": 30,
+  "retry_attempts": 3,
+  "exclude_patterns": ["#comments", ".sidebar"],
+  "include_patterns": [".content", ".article"],
+  "extract_images": true,
+  "extract_links": true
+}</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Configuration presets
+const presets = {
+    light: {
+        max_depth: 2,
+        max_pages: 50,
+        scrape_frequency_hours: 24
+    },
+    standard: {
+        max_depth: 3,
+        max_pages: 100,
+        scrape_frequency_hours: 12
+    },
+    intensive: {
+        max_depth: 5,
+        max_pages: 500,
+        scrape_frequency_hours: 6
+    },
+    enterprise: {
+        max_depth: 10,
+        max_pages: 1000,
+        scrape_frequency_hours: 2
+    }
+};
+
+function applyPreset(presetName) {
+    const preset = presets[presetName];
+    if (preset) {
+        document.getElementById('id_max_depth').value = preset.max_depth;
+        document.getElementById('id_max_pages').value = preset.max_pages;
+        document.getElementById('id_scrape_frequency_hours').value = preset.scrape_frequency_hours;
+        
+        // Show feedback
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-success border-0';
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    Applied ${presetName} preset configuration
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        new bootstrap.Toast(toast).show();
+        
+        setTimeout(() => toast.remove(), 3000);
+    }
+}
+
+function validateForm() {
+    const form = document.querySelector('form');
+    const formData = new FormData(form);
+    
+    // Basic validation
+    const url = formData.get('base_url');
+    const name = formData.get('name');
+    const depth = parseInt(formData.get('max_depth'));
+    const pages = parseInt(formData.get('max_pages'));
+    
+    let messages = [];
+    
+    if (!name || name.length < 3) {
+        messages.push('Domain name should be at least 3 characters long');
+    }
+    
+    if (!url || !url.match(/^https?:\/\/.+/)) {
+        messages.push('Please enter a valid HTTP or HTTPS URL');
+    }
+    
+    if (depth > 5 && pages > 500) {
+        messages.push('Warning: High depth + high page count may result in very long scraping sessions');
+    }
+    
+    // Advanced config validation
+    const advancedConfig = formData.get('advanced_config');
+    if (advancedConfig && advancedConfig.trim()) {
+        try {
+            JSON.parse(advancedConfig);
+            messages.push('✓ Advanced configuration JSON is valid');
+        } catch (e) {
+            messages.push('Error: Invalid JSON in advanced configuration - ' + e.message);
+        }
+    }
+    
+    // Show results
+    const alert = document.createElement('div');
+    alert.className = messages.some(m => m.startsWith('Error')) ? 'alert alert-danger' : 'alert alert-success';
+    alert.innerHTML = `
+        <h6>Validation Results:</h6>
+        <ul class="mb-0">
+            ${messages.map(msg => `<li>${msg}</li>`).join('')}
+        </ul>
+    `;
+    
+    // Remove existing alerts
+    document.querySelectorAll('.validation-alert').forEach(el => el.remove());
+    alert.classList.add('validation-alert');
+    
+    form.parentNode.insertBefore(alert, form);
+    alert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Auto-extract domain name from URL
+document.getElementById('id_base_url').addEventListener('blur', function() {
+    const url = this.value;
+    const nameField = document.getElementById('id_name');
+    
+    if (url && !nameField.value) {
+        try {
+            const domain = new URL(url).hostname.replace('www.', '');
+            const parts = domain.split('.');
+            const name = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+            nameField.value = name;
+        } catch (e) {
+            // Invalid URL, ignore
+        }
+    }
+});
+
+// JSON syntax highlighting and validation
+const configTextarea = document.getElementById('id_advanced_config');
+if (configTextarea) {
+    configTextarea.addEventListener('blur', function() {
+        const value = this.value.trim();
+        if (value) {
+            try {
+                const parsed = JSON.parse(value);
+                this.value = JSON.stringify(parsed, null, 2);
+                this.classList.remove('is-invalid');
+            } catch (e) {
+                this.classList.add('is-invalid');
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

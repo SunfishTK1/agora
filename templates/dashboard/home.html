@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Scraping Platform{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Stats Cards -->
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number text-primary">{{ total_domains }}</div>
+            <div class="stat-label">Total Domains</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number text-success">{{ active_domains }}</div>
+            <div class="stat-label">Active Domains</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number text-info" id="running-jobs">{{ running_jobs }}</div>
+            <div class="stat-label">Running Jobs</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number text-warning">{{ pages_today }}</div>
+            <div class="stat-label">Pages Today</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <!-- Performance Overview -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Activity Overview (Last 7 Days)</h5>
+                <div class="d-flex gap-3">
+                    <small class="text-muted">
+                        <i class="bi bi-circle-fill text-primary"></i> Jobs
+                    </small>
+                    <small class="text-muted">
+                        <i class="bi bi-circle-fill text-success"></i> Pages
+                    </small>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="activityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Status -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">System Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>Scheduler</span>
+                    <span class="badge bg-{{ scheduler_status.running|yesno:'success,danger' }}" id="scheduler-status">
+                        {{ scheduler_status.running|yesno:'Running,Stopped' }}
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>Active Jobs</span>
+                    <span class="badge bg-info">{{ scheduler_status.total_jobs }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>Success Rate (Today)</span>
+                    <span class="badge bg-{{ success_rate_today|floatformat:0|add:0|yesno:'success,warning' }}">
+                        {{ success_rate_today }}%
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Jobs vs Yesterday</span>
+                    {% if jobs_today >= jobs_yesterday %}
+                        <span class="text-success">
+                            <i class="bi bi-arrow-up"></i> 
+                            +{{ jobs_today|add:jobs_yesterday|floatformat:0 }}
+                        </span>
+                    {% else %}
+                        <span class="text-danger">
+                            <i class="bi bi-arrow-down"></i> 
+                            {{ jobs_today|add:jobs_yesterday|floatformat:0 }}
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <!-- Recent Jobs -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Scraping Jobs</h5>
+                <a href="{% url 'dashboard:job_list' %}" class="btn btn-outline-primary btn-sm">
+                    View All Jobs
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_jobs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Domain</th>
+                                    <th>Status</th>
+                                    <th>Pages</th>
+                                    <th>Duration</th>
+                                    <th>Started</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in recent_jobs %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'dashboard:domain_detail' job.domain.id %}" 
+                                           class="text-decoration-none">
+                                            {{ job.domain.name }}
+                                        </a>
+                                        <small class="text-muted d-block">{{ job.domain.domain }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-{{ job.status }}">
+                                            {{ job.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if job.pages_scraped > 0 %}
+                                            <span class="text-success">{{ job.pages_scraped }}</span>
+                                            {% if job.pages_failed > 0 %}
+                                                / <span class="text-danger">{{ job.pages_failed }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if job.duration %}
+                                            <span data-duration="{{ job.duration.total_seconds }}">
+                                                {{ job.duration.total_seconds|floatformat:0 }}s
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if job.started_at %}
+                                            <span data-timestamp="{{ job.started_at.isoformat }}">
+                                                {{ job.started_at|timesince }} ago
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">Not started</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'dashboard:job_detail' job.id %}" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-clock-history text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">No recent jobs found</p>
+                        <a href="{% url 'dashboard:domain_create' %}" class="btn btn-primary">
+                            Add Your First Domain
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Modal -->
+<div class="modal fade" id="quickActionsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quick Actions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'dashboard:domain_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add New Domain
+                    </a>
+                    <a href="{% url 'dashboard:analytics' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-bar-chart"></i> View Analytics
+                    </a>
+                    <a href="{% url 'dashboard:scheduler_status' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-gear"></i> Scheduler Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Action Button -->
+<button class="btn btn-primary position-fixed" style="bottom: 2rem; right: 2rem; border-radius: 50%; width: 60px; height: 60px; z-index: 1000;" 
+        data-bs-toggle="modal" data-bs-target="#quickActionsModal">
+    <i class="bi bi-plus" style="font-size: 1.5rem;"></i>
+</button>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Activity Chart
+    const ctx = document.getElementById('activityChart').getContext('2d');
+    const chartData = {{ chart_data|safe }};
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.map(d => d.date),
+            datasets: [{
+                label: 'Jobs',
+                data: chartData.map(d => d.jobs),
+                borderColor: 'rgb(37, 99, 235)',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                tension: 0.4,
+                fill: false
+            }, {
+                label: 'Pages',
+                data: chartData.map(d => d.pages),
+                borderColor: 'rgb(5, 150, 105)',
+                backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                tension: 0.4,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    radius: 3,
+                    hoverRadius: 6
+                }
+            }
+        }
+    });
+    
+    // Format duration elements
+    document.querySelectorAll('[data-duration]').forEach(element => {
+        const seconds = parseInt(element.getAttribute('data-duration'));
+        element.textContent = formatDuration(seconds);
+    });
+});
+</script>
+{% endblock %}
